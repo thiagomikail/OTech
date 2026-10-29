@@ -5,6 +5,7 @@ Tools for operational-technology engineers, on one site. The home page at `/` li
 - **FMEA** at `/fmea/` — AI-assisted Failure Mode and Effects Analysis for reliability engineers, following **AIAG-VDA 2026**.
 - **PetriPLC** at `/petri/` — describe a machine, simulate its Petri net, generate IEC 61131-3 code ([below](#petriplc--petri)).
 - **Yield** at `/yield/` — furnace energy and regenerative-combustion diagnostics ([below](#yield--yield)).
+- **Mercado** at `/mercado/` — weekly trade ideas with their sources, scored against the S&P 500 ([below](#mercado--mercado)).
 
 All the pages share one look (`src/theme.css`), in the spirit of an industrial HMI (ISA-101): gray surfaces,
 square corners, a dark title bar, and color only where it means something (blue for selected, green, amber
@@ -184,6 +185,28 @@ need real values, so the appearance is picked in JS); everything else uses the
 theme classes and the building blocks in `src/yield/components/ui.jsx`.
 Recharts' `<Sankey>` calls `data.nodes.map()` without checking anything:
 `SankeyDiagram` validates the shape before rendering.
+
+## Mercado — `/mercado/`
+
+Weekly trade ideas, written every Monday before the US open, in Portuguese. Each idea carries its sources, an
+entry, a target and a stop (or a defined-risk option structure, or a prediction-market price), a size and a
+confidence. The page measures every idea ever published by the same rules and compares it with the S&P 500 over
+the same period. On paper: nothing here places an order.
+
+- **Prices** come from `api/precos.ts`, a Vercel Function that passes the Yahoo Finance daily chart through
+  (Stooq as fallback), cached 15 minutes at the CDN. The browser cannot call Yahoo directly (CORS). The function
+  only accepts a validated symbol and only calls those two hosts. Without it (in `vite dev`, say) the page says
+  "sem cotação agora" and still shows the edition; it never invents a price.
+- **Scoring** (`src/mercado/desfecho.ts`) does not flatter the edition: entry at the first open after
+  publication; a day that touches both stop and target counts as the stop; a gap past the stop exits at the
+  open; options go to expiry at intrinsic value against the cost estimated at publication.
+- **Mirrored from Bancada.** The editions are written in the private Bancada repo, where the same module also
+  keeps paper bookings. `src/mercado/tipos.ts`, `src/mercado/desfecho.ts` and `src/mercado/edicoes/` are
+  copies of Bancada's `lib/mercado/` and must stay byte-identical: the Monday run copies the whole `edicoes/`
+  folder over. A published edition is never rewritten — it only gains `resolucao` and dated `adendos`.
+- **Tests:** `npm run test:mercado` (scoring rules, the Yahoo parser, every edition's limits, the price
+  function with the network stubbed) and `npm run test:mercado:e2e` (real Chrome against the build, with
+  prices served from `tests/mercado/precos.json` on 20 Nov 2026).
 
 ## Environment Variables
 

@@ -30,6 +30,9 @@
           <a href="/yield/" class="rounded-sm px-2.5 py-1.5 text-on-bar-2 transition-colors hover:bg-bar-raised hover:text-on-bar"
             >Yield</a
           >
+          <a href="/mercado/" class="rounded-sm px-2.5 py-1.5 text-on-bar-2 transition-colors hover:bg-bar-raised hover:text-on-bar"
+            >Mercado</a
+          >
         </div>
       </nav>
     </header>
@@ -69,7 +72,7 @@
       <section id="apps" class="mx-auto max-w-[1120px] scroll-mt-12 px-4 pb-4 pt-12 sm:px-6" aria-labelledby="apps-title">
         <div class="mb-4 flex items-end justify-between border-b border-line pb-2">
           <h2 id="apps-title" class="text-[13px] font-bold uppercase tracking-[0.1em] text-ink-2">Tools</h2>
-          <span class="font-mono text-[12px] text-ink-3">3 apps</span>
+          <span class="font-mono text-[12px] text-ink-3">4 apps</span>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
@@ -266,6 +269,66 @@
                     <span class="font-semibold uppercase tracking-[0.04em] text-ink-2">Emissions</span
                     ><span class="text-right font-mono text-ink">100</span>
                     <div class="col-span-2 mt-1 h-1.5 bg-fill-strong"><div class="h-full bg-green" style="width: 100%"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="flex flex-col rounded-sm border border-line bg-surface md:col-span-2">
+            <div class="flex h-9 items-center gap-2 border-b border-line bg-strip px-3">
+              <img src="/mercado-icon.svg" alt="" class="h-5 w-5" />
+              <h3 class="text-[12px] font-bold uppercase tracking-[0.08em]">Mercado</h3>
+              <span class="ml-auto font-mono text-[11px] text-ink-3">/mercado</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-5 p-5 md:flex-row">
+              <div class="flex flex-1 flex-col">
+                <p class="text-[22px] font-semibold leading-tight">Weekly trade ideas, with receipts.</p>
+                <p class="mt-2 text-[15px] leading-relaxed text-ink-2">
+                  Every Monday before the open: a handful of stock, ETF, option, crypto and prediction-market ideas, each
+                  with its sources, its stop and what would kill it. Every idea is scored by fixed rules against the S&amp;P
+                  500, and the misses stay on the record. In Portuguese, on paper.
+                </p>
+                <ul class="mt-4 flex flex-wrap gap-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-ink-2">
+                  <li class="rounded-sm border border-line bg-raised px-2 py-0.5">Weekly research</li>
+                  <li class="rounded-sm border border-line bg-raised px-2 py-0.5">Stop &amp; target</li>
+                  <li class="rounded-sm border border-line bg-raised px-2 py-0.5">Hit rate vs SPY</li>
+                  <li class="rounded-sm border border-line bg-raised px-2 py-0.5">Prediction markets</li>
+                </ul>
+                <a
+                  href="/mercado/"
+                  class="mt-5 inline-flex h-9 items-center gap-2 self-start rounded-sm border border-accent-hover bg-accent px-4 text-[12px] font-bold uppercase tracking-[0.06em] text-on-accent transition-colors hover:bg-accent-hover md:mt-auto"
+                  data-testid="home-mercado"
+                  >Open Mercado
+                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg
+                ></a>
+              </div>
+              <div class="rounded-sm border border-line bg-field p-4 md:w-[46%] md:shrink-0" aria-hidden="true">
+                <div class="flex items-center justify-between">
+                  <p class="font-mono text-[15px] font-medium">IDEA · 1 MONTH</p>
+                  <span class="inline-block rounded-sm bg-green/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-green-ink"
+                    >Long</span
+                  >
+                </div>
+                <div class="relative mt-4 h-8">
+                  <div class="absolute left-[8%] top-1/2 h-1.5 w-[28%] -translate-y-1/2 bg-red/45"></div>
+                  <div class="absolute left-[36%] top-1/2 h-1.5 w-[56%] -translate-y-1/2 bg-green/45"></div>
+                  <div class="absolute left-[36%] top-1 h-6 w-0.5 -translate-x-1/2 bg-ink"></div>
+                  <div class="absolute left-[61%] top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green ring-2 ring-field"></div>
+                </div>
+                <div class="mt-1 flex justify-between font-mono text-[12px]">
+                  <span class="text-ink-3">stop −4%</span><span>entry</span><span class="text-ink-3">target +7%</span>
+                </div>
+                <div class="mt-4 space-y-2.5 text-[12px]">
+                  <div class="grid grid-cols-[1fr_3.5rem] items-center gap-x-3">
+                    <span class="font-semibold uppercase tracking-[0.04em] text-ink-2">Ideas</span
+                    ><span class="text-right font-mono text-green-ink">+2.4%</span>
+                    <div class="col-span-2 mt-1 h-1.5 bg-fill-strong"><div class="h-full bg-green" style="width: 64%"></div></div>
+                  </div>
+                  <div class="grid grid-cols-[1fr_3.5rem] items-center gap-x-3">
+                    <span class="font-semibold uppercase tracking-[0.04em] text-ink-2">Same money in SPY</span
+                    ><span class="text-right font-mono text-ink">+1.1%</span>
+                    <div class="col-span-2 mt-1 h-1.5 bg-fill-strong"><div class="h-full bg-ink-3" style="width: 30%"></div></div>
                   </div>
                 </div>
               </div>
