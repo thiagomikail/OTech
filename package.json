@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test:petri": "tsx tests/petri/model.test.ts && tsx tests/petri/equivalence.test.ts && tsx tests/petri/llm.test.ts",
     "test:petri:e2e": "vite build && node tests/petri/e2e.mjs",
-    "test:yield:e2e": "vite build && node tests/yield/smoke.mjs"
+    "test:yield:e2e": "vite build && node tests/yield/smoke.mjs",
+    "test:mercado": "tsx tests/mercado/desfecho.test.ts && tsx tests/mercado/api.test.ts",
+    "test:mercado:e2e": "vite build && node tests/mercado/smoke.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.8",
