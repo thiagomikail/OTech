@@ -7,7 +7,11 @@
  * dos sites leva `so`, e cada um filtra o seu.
  *
  * Marcação mínima dentro dos textos: `**negrito**`, `[texto](https://…)` pra
- * fonte e `[texto](#id)` pra outra pergunta. Nada de HTML.
+ * fonte, `[texto](#id)` pra outra pergunta e `` `código` ``. Nada de HTML.
+ *
+ * ⚠️ Este arquivo é PÚBLICO: a cópia dele mora no repositório aberto da OTech,
+ * inclusive as perguntas com `so: "bancada"`. Nada de endereço do app, modelo
+ * de acesso, servidor do banco ou chave aqui.
  *
  * Regra de escrita: cada resposta descreve o que o CÓDIGO faz hoje
  * (`desfecho.ts`, `precos.ts`, a tela). Mudou a regra, muda a resposta.
@@ -17,8 +21,11 @@
 
 export type Site = "bancada" | "otech";
 
-/** Um parágrafo, ou uma lista de itens curtos. */
-export type Bloco = string | { lista: string[] };
+/**
+ * Um parágrafo, uma lista de itens curtos, ou um fluxo: passos em ordem,
+ * desenhados como caixas ligadas por seta.
+ */
+export type Bloco = string | { lista: string[] } | { fluxo: { titulo: string; texto: string }[] };
 
 export type Pergunta = {
   /** Âncora da pergunta: `#entrada` leva direto pra ela. Único no arquivo inteiro. */
@@ -623,16 +630,205 @@ export const AJUDA: Secao[] = [
     ],
   },
   {
-    id: "por-dentro",
-    titulo: "Por dentro",
-    resumo: "Como o Mercado é feito e publicado.",
+    id: "arquitetura",
+    titulo: "Estrutura e arquitetura de TI",
+    resumo: "As peças do sistema, por onde os dados passam e o que protege cada parte.",
     perguntas: [
+      {
+        id: "pecas",
+        pergunta: "Quais são as peças do sistema?",
+        resposta: [
+          "Seis peças, cada uma com um trabalho só:",
+          {
+            fluxo: [
+              { titulo: "Pesquisa", texto: "Uma sessão de IA (Claude) agendada pra segunda de manhã. Lê notícias e dados na web e escreve a edição." },
+              { titulo: "Código", texto: "A edição vira um arquivo no repositório Git, no GitHub. O histórico guarda a data de cada mudança." },
+              { titulo: "Publicação", texto: "A Vercel monta o site a partir do repositório e põe no ar em minutos." },
+              { titulo: "Site", texto: "As páginas que você vê: a edição, o registro de acertos e esta ajuda." },
+              { titulo: "Cotações", texto: "O servidor busca os preços diários no Yahoo Finance (Stooq de reserva) quando alguém abre a página." },
+              { titulo: "Conta", texto: "Funções puras aplicam as regras e medem cada ideia contra o SPY." },
+            ],
+          },
+          "A IA que escreve a edição e o código que mede as ideias são separados de propósito: quem escreve a tese não corrige a nota.",
+        ],
+      },
+      {
+        id: "fluxo-semana",
+        pergunta: "O que acontece numa segunda-feira, passo a passo?",
+        resposta: [
+          {
+            fluxo: [
+              { titulo: "6h40", texto: "A sessão de pesquisa começa num computador novo na nuvem e baixa o código." },
+              { titulo: "Pesquisa", texto: "Fecha as previsões que resolveram, lê a semana e escreve a revisão e a edição nova." },
+              { titulo: "Conferência", texto: "Os testes validam as regras da conta e cada limite da edição. Se algo falha, para aqui." },
+              { titulo: "Publicação", texto: "Commit direto na main dos dois repositórios. A Vercel monta e publica sozinha." },
+              { titulo: "9h30", texto: "A bolsa abre: esta é a entrada de todas as ideias da semana." },
+              { titulo: "Dias seguintes", texto: "Cada visita busca a cotação e mostra em que pé cada ideia está, até ela fechar." },
+            ],
+          },
+        ],
+      },
+      {
+        id: "tecnologias",
+        pergunta: "Que tecnologias são usadas?",
+        resposta: [
+          {
+            lista: [
+              "**Pesquisa** — Claude (Anthropic), numa sessão agendada na nuvem, com busca na web.",
+              "**Código e histórico** — TypeScript, versionado em Git no GitHub.",
+              "**Hospedagem** — Vercel: monta o site, serve pela CDN e roda as funções de servidor.",
+              "**Cotações** — o gráfico diário do Yahoo Finance, com o Stooq de reserva.",
+              "**Caixa de perguntas** — Gemini (Google), com busca na base deste FAQ e das edições ([como funciona](#perguntas-ia)).",
+            ],
+          },
+        ],
+      },
+      {
+        id: "tecnologias-bancada",
+        pergunta: "E o app da casa, em que é feito?",
+        so: "bancada",
+        resposta: [
+          {
+            lista: [
+              "**Site** — Next.js 16 (componentes de servidor e server actions), React 19 e Tailwind 4, instalado como app (PWA) no celular e no iPad.",
+              "**Banco** — Postgres gerenciado, acessado pelo Prisma 7. O Mercado usa só duas tabelas ([quais](#banco)).",
+              "**Cotação** — buscada pelo servidor do site, com cache de 15 minutos.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "tecnologias-otech",
+        pergunta: "E esta página, em que é feita?",
+        so: "otech",
+        resposta: [
+          {
+            lista: [
+              "**Páginas** — Vite 5, React 18 e Tailwind 4: arquivos estáticos servidos pela CDN da Vercel.",
+              "**Funções** — duas Vercel Functions: `/api/precos` (cotação) e `/api/perguntar` (a caixa de perguntas).",
+              "**Banco** — nenhum. Esta vitrine não grava nada.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "onde-dados",
+        pergunta: "Onde os dados ficam guardados?",
+        resposta: [
+          {
+            lista: [
+              "**As edições** — como código, no repositório. Cada edição é um arquivo com a segunda-feira no nome, e o histórico do Git mostra quando ele foi criado e se foi mexido.",
+              "**As cotações** — não ficam guardadas. São buscadas na hora e reaproveitadas por até 15 minutos.",
+              "**As perguntas da caixa** — não ficam guardadas. Passam pelo servidor e pelo Gemini só pra gerar a resposta.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "banco",
+        pergunta: "Que tabelas o Mercado usa no banco?",
+        so: "bancada",
+        resposta: [
+          "Duas, e só com o que nasce do uso — as ideias não estão no banco:",
+          {
+            lista: [
+              "**Desfecho** — o resultado de uma ideia de preço, gravado uma vez quando ela fecha: a ideia, o motivo (alvo, stop ou prazo), entrada e saída com as datas, o retorno e o SPY no mesmo período.",
+              "**Reserva** — quem seguiu qual ideia: o perfil, a ideia, quanto, o preço próprio de entrada e de saída (se houver) e se é no papel.",
+            ],
+          },
+          "Sem essas tabelas o Mercado continua funcionando: a conta é feita na hora e a reserva some com um aviso.",
+        ],
+      },
+      {
+        id: "modelo-edicao",
+        pergunta: "Como uma edição é organizada por dentro?",
+        resposta: [
+          "Uma edição é um objeto com tipos verificados na hora de montar o site — um campo errado impede a publicação:",
+          {
+            lista: [
+              "**Cabeçalho** — a segunda-feira, o instante da publicação, a manchete, a leitura e a postura.",
+              "**Termômetro** — o símbolo de cada indicador, o valor na publicação e a frase do porquê.",
+              "**Ideias** — id, instrumento, ativo, direção, horizonte, vencimento, alvo e stop em %, tamanho, confiança, as bases com fonte e o que mata a ideia. A opção tem ainda a estrutura, os strikes e o custo; a previsão, o mercado, o lado, o preço e, quando resolver, a resolução.",
+              "**Contexto** — o que evitar, a agenda, as apostas, o Congresso, a revisão e os adendos.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "por-que-codigo",
+        pergunta: "Por que a edição é código, e não um cadastro num banco?",
+        resposta: [
+          {
+            lista: [
+              "**Prova de data** — o histórico do Git mostra quando cada ideia foi escrita e que ela não mudou depois.",
+              "**Conferência antes de publicar** — os testes rodam em cima do próprio arquivo; edição fora das regras não sobe.",
+              "**Nada a manter** — não existe painel de administração, login nem cadastro pra cuidar.",
+              "**Funciona sem banco** — se o banco cair, a edição continua no ar.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "cotacao-bancada",
+        pergunta: "Como a cotação chega à tela?",
+        so: "bancada",
+        resposta: [
+          "Quem busca é o servidor do site, na hora de montar a página: uma chamada por ativo, cobrindo do começo da edição ao último vencimento, mais o SPY pra comparar. Cada busca tem 5 segundos de limite e fica guardada por 15 minutos. Sem o Yahoo, tenta o Stooq; sem os dois, a tela diz que não sabe.",
+          "Ideias que já fecharam não buscam cotação de novo: o resultado vem do banco.",
+        ],
+      },
+      {
+        id: "cotacao-otech",
+        pergunta: "Como a cotação chega à tela?",
+        so: "otech",
+        resposta: [
+          "O navegador não pode chamar o Yahoo direto (o Yahoo bloqueia pedido vindo de outro site). Então ele pede à função `/api/precos`, da Vercel, que confere o símbolo e as datas, busca no Yahoo (ou no Stooq) e devolve a resposta crua. A CDN guarda cada resposta por 15 minutos. O navegador transforma a resposta em pregões e aplica as regras.",
+          "A função só aceita símbolo de bolsa e só fala com o Yahoo e o Stooq: ela não serve pra buscar outra coisa na internet.",
+        ],
+      },
+      {
+        id: "conta-tecnica",
+        pergunta: "Onde a conta do resultado roda?",
+        resposta: [
+          "Em **funções puras**: recebem a ideia, a edição e os pregões do período e devolvem a situação (aguardando, aberta, fechada) com entrada, saída e retorno. Não leem relógio, rede nem banco — por isso dá pra testar cada regra com pregões montados à mão.",
+          "O mesmo arquivo roda nos dois sites: no app da casa, no servidor, que grava o resultado quando a ideia fecha; na vitrine pública, no navegador de quem visita.",
+        ],
+      },
+      {
+        id: "espelho",
+        pergunta: "Como os dois sites ficam com o mesmo conteúdo?",
+        resposta: [
+          "Quatro coisas são **cópias idênticas** nos dois repositórios: os tipos, as regras da conta, este FAQ e a pasta de edições. Toda segunda, a sessão de pesquisa escreve a edição no app da casa, copia a pasta pra vitrine, confere que o resto continua idêntico e roda os testes dos dois lados antes de publicar. Se alguma cópia divergir, ela para e avisa.",
+        ],
+      },
       {
         id: "publicacao",
         pergunta: "Como a edição chega ao site?",
         resposta: [
-          "A sessão de pesquisa escreve a edição como um arquivo de código, roda os testes e publica direto no repositório. A Vercel monta e põe o site no ar sozinha, em poucos minutos. Se algum teste falhar, a sessão para e não publica.",
-          "O Mercado mora em dois repositórios: o do **Bancada** (privado), onde a edição nasce e as reservas ficam, e o do **OT Workbench** (público), a vitrine. As regras de conta e as edições são arquivos idênticos nos dois.",
+          "A sessão de pesquisa grava a edição no repositório, na branch principal. A Vercel percebe o commit, monta o site e põe no ar em poucos minutos — é o deploy. Se a montagem falhar (um erro de tipo, por exemplo), a versão anterior continua no ar — o site nunca fica quebrado por uma edição ruim.",
+          "Mudança de código passa antes por uma branch separada, que a Vercel monta como prévia; só depois de conferida ela entra na principal.",
+        ],
+      },
+      {
+        id: "sessao-pesquisa",
+        pergunta: "Como a sessão de pesquisa roda?",
+        resposta: [
+          "É uma tarefa agendada (toda segunda, 6h40 de Nova York) que abre uma sessão nova numa máquina na nuvem, sem nada da semana anterior além do código. Ela segue um roteiro escrito, guardado no próprio repositório, e tem a rede restrita: busca na web, sim; serviço de cotação, não — por isso alvo e stop são em %.",
+          "No fim ela manda um resumo pro dono do projeto. Se um teste falhar, ela não publica e diz o que falhou.",
+        ],
+      },
+      {
+        id: "seguranca",
+        pergunta: "O que protege o sistema?",
+        resposta: [
+          {
+            lista: [
+              "**Chaves só no servidor** — as chaves que o Mercado usa (Gemini e banco) são lidas pelas funções de servidor; nenhuma página do Mercado manda chave pro navegador, e nenhuma está no código.",
+              "**Funções fechadas** — a de cotação só aceita símbolo de bolsa e só fala com dois provedores; a de perguntas só aceita perguntas curtas, com limite por visitante.",
+              "**Nada pessoal** — o Mercado não guarda saldo, conta, patrimônio nem dado de quem visita. As reservas do app da casa são no papel.",
+              "**Código público sem segredo** — a vitrine é de código aberto; nada nela dá acesso ao app da casa, que é privado.",
+            ],
+          },
         ],
       },
       {
@@ -643,7 +839,40 @@ export const AJUDA: Secao[] = [
             lista: [
               "Cada regra da conta: entrada depois da publicação, stop antes do alvo no mesmo dia, saída na abertura no gap, vencimento, travas, previsões, reservas.",
               "Toda edição: tamanho até 5%, pelo menos duas bases, \"o que mata a ideia\" escrito, strike do lado certo, semana começando numa segunda.",
+              "Este FAQ: nenhuma pergunta repetida, nenhum link interno quebrado.",
+              "A caixa de perguntas: pergunta fora do assunto é recusada antes de chamar a IA; a resposta só usa a base.",
               "A tela num navegador de verdade, com cotações de teste: uma ideia no alvo, uma no stop, uma aberta, sem rolagem lateral no celular.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "perguntas-ia",
+        pergunta: "Como funciona a caixa de perguntas?",
+        resposta: [
+          "É uma busca com resposta escrita por IA (o que se chama de RAG):",
+          {
+            fluxo: [
+              { titulo: "Base", texto: "Este FAQ, o glossário e as edições publicadas, recortados em trechos curtos." },
+              { titulo: "Busca", texto: "As palavras da pergunta (sem acento) são comparadas com cada trecho; os mais parecidos são escolhidos." },
+              { titulo: "Filtro", texto: "Pergunta sem nenhuma palavra do Mercado, ou sem trecho que tenha a ver com ela, é recusada ali mesmo — sem chamar a IA." },
+              { titulo: "Resposta", texto: "O Gemini recebe só os trechos escolhidos e a pergunta, com a instrução de responder apenas com eles — e de recusar o que não for sobre o Mercado." },
+              { titulo: "Fontes", texto: "A resposta vem com os trechos usados, cada um com link pra pergunta ou pra edição." },
+            ],
+          },
+          "Limites: até 300 caracteres por pergunta e algumas perguntas por minuto por visitante. A pergunta não fica guardada.",
+        ],
+      },
+      {
+        id: "limites-ia",
+        pergunta: "O que a caixa de perguntas não faz?",
+        resposta: [
+          {
+            lista: [
+              "**Não responde fora do assunto** — só o Mercado: as ideias, as regras, os dados e a estrutura do site.",
+              "**Não dá conselho pessoal** — \"devo comprar?\" não tem resposta aqui; ela explica o que a edição diz e por quê.",
+              "**Não inventa** — se a base não cobre a pergunta, ela diz que não sabe.",
+              "**Pode errar** — é IA. Confira nas fontes que ela cita.",
             ],
           },
         ],
@@ -652,7 +881,7 @@ export const AJUDA: Secao[] = [
         id: "dados-visitante",
         pergunta: "O site guarda alguma coisa sobre mim?",
         resposta: [
-          "A vitrine pública não guarda nada sobre quem visita: não tem conta, cadastro nem formulário. No app da casa, ficam só as reservas de cada perfil.",
+          "Não guarda. Não tem conta, cadastro nem formulário. A pergunta que você digita na caixa vai pro Gemini, do Google, só pra gerar a resposta, e não fica salva no site. No app da casa, ficam só as reservas de cada perfil.",
         ],
       },
       {

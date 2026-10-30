@@ -7,6 +7,7 @@
  * answered here: once with nothing (the page must say "sem cotação" and still
  * show the edition), once with the prices in tests/mercado/precos.json on
  * 20 Nov 2026, when one idea has hit its target, one its stop and one is open.
+ * /api/perguntar is answered here too, as the function would.
  *
  * CHROME_PATH points at another Chrome (container, CI); without it, the Mac one.
  * SMOKE_OUT=<dir> also saves a screenshot per case.
@@ -154,6 +155,26 @@ for (const viewport of [
   await p.waitForTimeout(300);
   const open = await p.locator('details[open] summary').allTextContents();
   check(`${tag}: search ignores accents`, open.some((t) => t.includes('mercado de previsão')), `${open.length} open`);
+  const perguntas = [];
+  await p.route('**/api/perguntar', (route) => {
+    perguntas.push(JSON.parse(route.request().postData() ?? '{}').pergunta);
+    return route.fulfill({ json: { texto: 'Sai na **abertura**, não no stop [1].', ids: ['ajuda:gap', 'ajuda:entrada'] } });
+  });
+  const caixa = p.getByTestId('perguntar');
+  await caixa.getByLabel('Sua pergunta').fill('qual a capital da França?');
+  await caixa.getByRole('button', { name: 'Perguntar' }).click();
+  await caixa.getByTestId('resposta').waitFor({ timeout: 5000 });
+  check(`${tag}: off-topic refused in the page`, (await caixa.getByTestId('resposta').innerText()).startsWith('Só respondo') && perguntas.length === 0);
+  await caixa.getByLabel('Sua pergunta').fill('o que acontece se abrir abaixo do stop?');
+  await caixa.getByRole('button', { name: 'Perguntar' }).click();
+  await caixa.getByRole('link', { name: /abrir além do stop/ }).waitFor({ timeout: 5000 });
+  const dita = await caixa.getByTestId('resposta').innerText();
+  check(`${tag}: on-topic goes to the function and comes back with its source`, perguntas.length === 1 && dita.includes('Sai na abertura') && dita.includes('[1]') && !dita.includes('**'));
+  check(`${tag}: only the cited excerpt is listed`, (await caixa.getByTestId('resposta').getByRole('link').count()) === 1);
+  if (OUT) await caixa.screenshot({ path: `${OUT}/perguntar-${viewport.width}px.png` });
+  await caixa.getByRole('link', { name: /abrir além do stop/ }).click();
+  await p.waitForTimeout(500);
+  check(`${tag}: the source opens its question`, await p.locator('#gap').evaluate((d) => d.open));
   await p.goto(`${BASE}/mercado/ajuda/#mesmo-dia`);
   await p.waitForTimeout(800);
   check(`${tag}: #mesmo-dia opens that question`, await p.locator('#mesmo-dia').evaluate((d) => d.open));
