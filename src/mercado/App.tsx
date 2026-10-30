@@ -1,9 +1,11 @@
+import { CircleHelp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import Painel from './components/Painel';
 import CartaoIdeia from './components/Ideia';
 import Impostos from './components/Impostos';
 import Registro from './components/Registro';
 import Termometro, { type AoVivo } from './components/Termometro';
+import Topo from './components/Topo';
 import { Agenda, Apostas, Congresso, Evitar } from './components/Contexto';
 import { desfecho, type Linha, resumo, retornoNoPeriodo, type Vela } from './desfecho';
 import { EDICOES } from './edicoes';
@@ -13,12 +15,6 @@ import { diasAtras, hojeNaBolsa } from './relogio';
 import type { Ideia } from './tipos';
 
 const POSTURA = { defensiva: 'defensiva', neutra: 'neutra', ofensiva: 'ofensiva' } as const;
-const FERRAMENTAS = [
-  { href: '/petri/', nome: 'PetriPLC' },
-  { href: '/fmea/', nome: 'FMEA' },
-  { href: '/yield/', nome: 'Yield' },
-  { href: '/mercado/', nome: 'Mercado' },
-];
 
 type Janela = { de: string; ate: string };
 
@@ -88,28 +84,7 @@ export default function App() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-black/40 bg-bar text-on-bar">
-        <nav className="mx-auto flex h-11 max-w-[1120px] items-center justify-between px-4 sm:px-6" aria-label="Principal">
-          <a href="/" className="flex items-center gap-2.5">
-            <img src="/workbench-icon.svg" alt="" className="h-6 w-6" />
-            <span className="hidden text-[13px] font-bold uppercase tracking-[0.1em] sm:inline">OT Workbench</span>
-          </a>
-          <div className="flex items-center gap-0.5 text-[12px] font-semibold uppercase tracking-[0.06em]">
-            {FERRAMENTAS.map((f) => (
-              <a
-                key={f.href}
-                href={f.href}
-                aria-current={f.href === '/mercado/' ? 'page' : undefined}
-                className={`rounded-sm px-2 py-1.5 transition-colors hover:bg-bar-raised hover:text-on-bar sm:px-2.5 ${
-                  f.href === '/mercado/' ? 'bg-bar-raised text-on-bar' : 'text-on-bar-2'
-                }`}
-              >
-                {f.nome}
-              </a>
-            ))}
-          </div>
-        </nav>
-      </header>
+      <Topo />
 
       <main className="mx-auto max-w-[1120px] px-4 pb-14 pt-8 sm:px-6">
         <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-orange-ink">Mercado · semana de {diaCurto(edicao.semana)}</p>
@@ -119,6 +94,11 @@ export default function App() {
           <li className="rounded-sm bg-accent px-2 py-0.5 text-on-accent">Postura {POSTURA[edicao.postura]}</li>
           <li className="rounded-sm border border-line bg-raised px-2 py-0.5 text-ink-2">publicada {diaCurto(edicao.publicadaEm.slice(0, 10))}</li>
           <li className="rounded-sm border border-line bg-raised px-2 py-0.5 text-ink-2">no papel</li>
+          <li>
+            <a href="/mercado/ajuda/" className="inline-flex items-center gap-1 rounded-sm border border-accent-hover bg-raised px-2 py-0.5 text-accent hover:bg-fill">
+              <CircleHelp size={12} aria-hidden /> Como funciona
+            </a>
+          </li>
         </ul>
 
         {EDICOES.length > 1 && (
@@ -197,7 +177,11 @@ export default function App() {
 
         <p className="mt-8 max-w-[760px] text-[12px] leading-relaxed text-ink-3">
           Pesquisa e opinião, não recomendação personalizada de investimento. Mercado perde dinheiro, inclusive seguindo boas razões. Nada aqui
-          executa ordem: toda decisão é de quem lê. Cotações do Yahoo Finance, com atraso.
+          executa ordem: toda decisão é de quem lê. Cotações do Yahoo Finance, com atraso.{' '}
+          <a href="/mercado/ajuda/" className="text-accent underline decoration-dotted underline-offset-2 hover:text-accent-hover">
+            Como funciona o Mercado
+          </a>
+          .
         </p>
       </main>
     </>

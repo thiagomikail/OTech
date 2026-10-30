@@ -136,6 +136,34 @@ for (const viewport of [
   await ctx.close();
 }
 
+// ── the help page: linked from the edition, searchable, deep-linkable
+for (const viewport of [
+  { width: 1366, height: 900 },
+  { width: 393, height: 852 },
+]) {
+  const tag = `ajuda ${viewport.width}px`;
+  const { ctx, p, errors } = await page({ viewport, now: '2026-10-29T15:00:00Z' });
+  await p.goto(`${BASE}/mercado/`);
+  await p.locator('main a[href="/mercado/ajuda/"]').first().click();
+  await p.getByRole('heading', { name: 'Como funciona o Mercado' }).waitFor({ timeout: 15000 });
+  check(`${tag}: the edition links to it`, true);
+  check(`${tag}: all the questions`, (await p.locator('details').count()) > 40, String(await p.locator('details').count()));
+  check(`${tag}: the public-page answer about bookings`, (await p.locator('#sem-reserva').count()) === 1);
+  check(`${tag}: and not the home app's booking how-to`, (await p.locator('#como-reservar').count()) === 0);
+  await p.getByPlaceholder(/Procurar/).fill('previsao');
+  await p.waitForTimeout(300);
+  const open = await p.locator('details[open] summary').allTextContents();
+  check(`${tag}: search ignores accents`, open.some((t) => t.includes('mercado de previsão')), `${open.length} open`);
+  await p.goto(`${BASE}/mercado/ajuda/#mesmo-dia`);
+  await p.waitForTimeout(800);
+  check(`${tag}: #mesmo-dia opens that question`, await p.locator('#mesmo-dia').evaluate((d) => d.open));
+  const width = await p.evaluate(() => document.documentElement.scrollWidth);
+  check(`${tag}: no sideways scroll`, width <= viewport.width, `${width}px`);
+  check(`${tag}: no errors`, errors.length === 0, errors.join(' | '));
+  if (OUT) await p.screenshot({ path: `${OUT}/ajuda-${viewport.width}px.png`, fullPage: viewport.width > 400 });
+  await ctx.close();
+}
+
 await browser.close();
 console.log(failures ? `\n${failures} failure(s).` : '\nMercado renders, measures and admits what it does not know.');
 process.exit(failures ? 1 : 0);
