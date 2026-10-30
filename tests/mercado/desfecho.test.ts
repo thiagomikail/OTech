@@ -18,6 +18,7 @@ import {
   retornoNoPeriodo,
   type Vela,
 } from "../../src/mercado/desfecho";
+import { AJUDA, GLOSSARIO, ajudaDe } from "../../src/mercado/ajuda";
 import { EDICOES } from "../../src/mercado/edicoes";
 import { velasDoYahoo } from "../../src/mercado/yahoo";
 import { TAMANHO_MAXIMO, type IdeiaOpcao, type IdeiaPreco, type IdeiaPrevisao } from "../../src/mercado/tipos";
@@ -203,6 +204,24 @@ for (const e of EDICOES) {
   }
 }
 ok(EDICOES.every((e, n) => n === 0 || EDICOES[n - 1].semana > e.semana), "edições em ordem, da mais nova pra mais antiga, sem semana repetida");
+
+// ── o help/FAQ: âncora quebrada é link que leva a lugar nenhum
+const idsAjuda = AJUDA.flatMap((sec) => sec.perguntas.map((p) => p.id));
+ok(new Set(idsAjuda).size === idsAjuda.length, `ajuda: ${idsAjuda.length} perguntas, nenhum id repetido`);
+const ancoras = [...JSON.stringify(AJUDA).matchAll(/\]\(#([a-z0-9-]+)\)/g)].map((m) => m[1]);
+const quebradas = ancoras.filter((a) => !idsAjuda.includes(a));
+ok(quebradas.length === 0, `ajuda: as ${ancoras.length} âncoras internas apontam pra pergunta que existe${quebradas.length ? ` (quebradas: ${quebradas.join(", ")})` : ""}`);
+for (const site of ["bancada", "otech"] as const) {
+  const sobra = ajudaDe(site).flatMap((sec) => sec.perguntas).filter((p) => p.so && p.so !== site);
+  ok(sobra.length === 0, `ajuda: o site ${site} não mostra pergunta do outro`);
+  // Âncora pra pergunta que o site esconde também leva a lugar nenhum.
+  const visiveis = new Set(ajudaDe(site).flatMap((sec) => sec.perguntas.map((p) => p.id)));
+  const escondidas = [...JSON.stringify(ajudaDe(site)).matchAll(/\]\(#([a-z0-9-]+)\)/g)].map((m) => m[1]).filter((a) => !visiveis.has(a));
+  ok(escondidas.length === 0, `ajuda: no site ${site}, nenhuma âncora pra pergunta escondida${escondidas.length ? ` (${escondidas.join(", ")})` : ""}`);
+}
+const semNegrito = JSON.stringify([AJUDA, GLOSSARIO]).replace(/\*\*[^*]+\*\*/g, "");
+ok(!semNegrito.includes("*"), "ajuda: só **negrito** — asterisco solto aparece cru na tela");
+ok(GLOSSARIO.every((g, i) => i === 0 || GLOSSARIO[i - 1].termo.localeCompare(g.termo, "pt-BR") < 0), "ajuda: glossário em ordem alfabética, sem repetição");
 
 console.log(falhas ? `\n${falhas} falha(s).` : "\nO desfecho das ideias está certo.");
 process.exit(falhas ? 1 : 0);

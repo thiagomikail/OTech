@@ -201,11 +201,17 @@ the same period. On paper: nothing here places an order.
   publication; a day that touches both stop and target counts as the stop; a gap past the stop exits at the
   open; options go to expiry at intrinsic value against the cost estimated at publication.
 - **Mirrored from Bancada.** The editions are written in the private Bancada repo, where the same module also
-  keeps paper bookings. `src/mercado/tipos.ts`, `src/mercado/desfecho.ts` and `src/mercado/edicoes/` are
-  copies of Bancada's `lib/mercado/` and must stay byte-identical: the Monday run copies the whole `edicoes/`
-  folder over. A published edition is never rewritten — it only gains `resolucao` and dated `adendos`.
-- **Tests:** `npm run test:mercado` (scoring rules, the Yahoo parser, every edition's limits, the price
-  function with the network stubbed) and `npm run test:mercado:e2e` (real Chrome against the build, with
+  keeps paper bookings. `src/mercado/tipos.ts`, `src/mercado/desfecho.ts`, `src/mercado/ajuda.ts` and
+  `src/mercado/edicoes/` are copies of Bancada's `lib/mercado/` and must stay byte-identical: the Monday run
+  copies the whole `edicoes/` folder over. A published edition is never rewritten — it only gains `resolucao`
+  and dated `adendos`.
+- **Help/FAQ** at `/mercado/ajuda/`, linked from the edition's header and footer: what Mercado is, how to read
+  each card, the scoring rules, quotes, risks, US taxes and a glossary, with accent-insensitive search and an
+  anchor per question (`/mercado/ajuda/#entrada`). The content is data (`src/mercado/ajuda.ts`); answers flagged
+  `so: 'bancada'` (the booking how-to) are left out here. Each answer describes what the code does: change a
+  rule, change its answer.
+- **Tests:** `npm run test:mercado` (scoring rules, the Yahoo parser, every edition's limits, the FAQ's ids and
+  anchors, the price function with the network stubbed) and `npm run test:mercado:e2e` (real Chrome against the build, with
   prices served from `tests/mercado/precos.json` on 20 Nov 2026).
 
 ## Environment Variables

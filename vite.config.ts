@@ -14,6 +14,7 @@ export default defineConfig({
         petri: 'petri/index.html',
         yield: 'yield/index.html',
         mercado: 'mercado/index.html',
+        mercadoAjuda: 'mercado/ajuda/index.html',
       },
     },
   },
