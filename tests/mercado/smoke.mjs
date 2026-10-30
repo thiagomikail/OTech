@@ -175,6 +175,12 @@ for (const viewport of [
   await caixa.getByRole('link', { name: /abrir além do stop/ }).click();
   await p.waitForTimeout(500);
   check(`${tag}: the source opens its question`, await p.locator('#gap').evaluate((d) => d.open));
+  await p.goto(`${BASE}/mercado/ajuda/#confianca`);
+  await p.waitForTimeout(800);
+  const formula = await p.locator('#confianca pre').first().innerText();
+  check(`${tag}: #confianca opens the confidence formula`, (await p.locator('#confianca').evaluate((d) => d.open)) && formula.includes('confiança = 1 + critérios'));
+  check(`${tag}: every formula question has its formula`, (await p.locator('#formulas details pre').count()) >= 12, String(await p.locator('#formulas details pre').count()));
+  if (OUT) await p.locator('#confianca').screenshot({ path: `${OUT}/confianca-${viewport.width}px.png` });
   await p.goto(`${BASE}/mercado/ajuda/#mesmo-dia`);
   await p.waitForTimeout(800);
   check(`${tag}: #mesmo-dia opens that question`, await p.locator('#mesmo-dia').evaluate((d) => d.open));

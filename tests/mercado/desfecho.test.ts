@@ -13,9 +13,11 @@ import {
   desfechoDeOpcao,
   desfechoDePreco,
   desfechoDePrevisao,
+  niveis,
   resumo,
   retornoDaReserva,
   retornoNoPeriodo,
+  valorNoVencimento,
   type Vela,
 } from "../../src/mercado/desfecho";
 import { AJUDA, GLOSSARIO, ajudaDe } from "../../src/mercado/ajuda";
@@ -34,7 +36,15 @@ import {
   pacoteDaBase,
 } from "../../src/mercado/perguntas";
 import { velasDoYahoo } from "../../src/mercado/yahoo";
-import { TAMANHO_MAXIMO, type IdeiaOpcao, type IdeiaPreco, type IdeiaPrevisao } from "../../src/mercado/tipos";
+import {
+  FORMULA_DA_CONFIANCA,
+  TAMANHO_MAXIMO,
+  confiancaDe,
+  criteriosDe,
+  type IdeiaOpcao,
+  type IdeiaPreco,
+  type IdeiaPrevisao,
+} from "../../src/mercado/tipos";
 
 let falhas = 0;
 const ok = (c: boolean, m: string) => {
@@ -208,6 +218,13 @@ for (const e of EDICOES) {
     ok(i.bases.length >= 2, `${onde}: ${i.bases.length} bases (mínimo 2)`);
     ok(i.invalida.length > 0, `${onde}: diz o que invalida`);
     ok(i.vence >= e.semana, `${onde}: vence (${i.vence}) depois do começo da semana`);
+    // Desde a fórmula, a confiança é conta: o número publicado tem que ser o da conta.
+    const criterios = criteriosDe(i, e.semana);
+    if (criterios) {
+      ok(Array.isArray(i.contra), `${onde}: lista o que pesa contra (vazia se nada)`);
+      ok(i.confianca === confiancaDe(criterios), `${onde}: confiança ${i.confianca} = 1 + ${criterios.length} critério(s) (${criterios.join(", ") || "nenhum"})`);
+      if (i.catalisador) ok(i.catalisador.dia >= e.semana && i.catalisador.dia <= i.vence, `${onde}: o catalisador cai dentro do prazo`);
+    }
     if (i.instrumento === "previsao") ok(i.preco > 0 && i.preco < 1, `${onde}: preço entre 0 e 1`);
     else if (i.instrumento === "opcao") {
       const [k1, k2] = i.strikes;
@@ -222,19 +239,78 @@ ok(EDICOES.every((e, n) => n === 0 || EDICOES[n - 1].semana > e.semana), "ediç�
 const idsAjuda = AJUDA.flatMap((sec) => sec.perguntas.map((p) => p.id));
 ok(new Set(idsAjuda).size === idsAjuda.length, `ajuda: ${idsAjuda.length} perguntas, nenhum id repetido`);
 const ancoras = [...JSON.stringify(AJUDA).matchAll(/\]\(#([a-z0-9-]+)\)/g)].map((m) => m[1]);
-const quebradas = ancoras.filter((a) => !idsAjuda.includes(a));
+// Seção também é âncora: `#formulas` leva pro começo dela.
+const secoesAjuda = AJUDA.map((sec) => sec.id);
+const quebradas = ancoras.filter((a) => !idsAjuda.includes(a) && !secoesAjuda.includes(a));
 ok(quebradas.length === 0, `ajuda: as ${ancoras.length} âncoras internas apontam pra pergunta que existe${quebradas.length ? ` (quebradas: ${quebradas.join(", ")})` : ""}`);
 for (const site of ["bancada", "otech"] as const) {
   const sobra = ajudaDe(site).flatMap((sec) => sec.perguntas).filter((p) => p.so && p.so !== site);
   ok(sobra.length === 0, `ajuda: o site ${site} não mostra pergunta do outro`);
   // Âncora pra pergunta que o site esconde também leva a lugar nenhum.
-  const visiveis = new Set(ajudaDe(site).flatMap((sec) => sec.perguntas.map((p) => p.id)));
+  const visiveis = new Set(ajudaDe(site).flatMap((sec) => [sec.id, ...sec.perguntas.map((p) => p.id)]));
   const escondidas = [...JSON.stringify(ajudaDe(site)).matchAll(/\]\(#([a-z0-9-]+)\)/g)].map((m) => m[1]).filter((a) => !visiveis.has(a));
   ok(escondidas.length === 0, `ajuda: no site ${site}, nenhuma âncora pra pergunta escondida${escondidas.length ? ` (${escondidas.join(", ")})` : ""}`);
 }
 const semNegrito = JSON.stringify([AJUDA, GLOSSARIO]).replace(/\*\*[^*]+\*\*/g, "");
 ok(!semNegrito.includes("*"), "ajuda: só **negrito** — asterisco solto aparece cru na tela");
 ok(GLOSSARIO.every((g, i) => i === 0 || GLOSSARIO[i - 1].termo.localeCompare(g.termo, "pt-BR") < 0), "ajuda: glossário em ordem alfabética, sem repetição");
+
+// ── a confiança: 1 + critérios, desde a edição de 9 nov
+const semanaNova = FORMULA_DA_CONFIANCA;
+const baseDe = (tipo: IdeiaPreco["bases"][number]["tipo"], fonte = true) => ({ tipo, texto: "x", ...(fonte ? { fonte: { nome: "f", url: "https://f" } } : {}) });
+const ideiaConf = (extra: Partial<IdeiaPreco>): IdeiaPreco => ({ ...alta, id: "conf", vence: "2026-11-20", contra: ["um ponto contra"], ...extra });
+ok(criteriosDe(ideiaConf({}), "2026-11-02") === null, "confiança: edição de antes da fórmula não é medida (foi julgamento)");
+ok(confiancaDe(criteriosDe(ideiaConf({ bases: [baseDe("dado"), baseDe("noticia")] }), semanaNova)!) === 1, "confiança: duas bases, nada mais, um ponto contra = 1");
+const exemploDaAjuda = ideiaConf({
+  bases: [baseDe("resultado"), baseDe("dado"), baseDe("noticia")],
+  catalisador: { dia: "2026-11-12", oque: "balanço" },
+});
+ok(confiancaDe(criteriosDe(exemploDaAjuda, semanaNova)!) === 3, "confiança: o exemplo da ajuda (três tipos, balanço no prazo, um contra) dá 3");
+const cheia = ideiaConf({ bases: [baseDe("resultado"), baseDe("dado"), baseDe("historico")], catalisador: { dia: "2026-11-12", oque: "balanço" }, contra: [] });
+ok(confiancaDe(criteriosDe(cheia, semanaNova)!) === 5, "confiança: os quatro critérios = 5");
+ok(!criteriosDe(ideiaConf({ bases: [baseDe("historico", false), baseDe("dado")] }), semanaNova)!.includes("historico"), "confiança: histórico sem fonte não conta");
+ok(!criteriosDe(ideiaConf({ catalisador: { dia: "2026-11-21", oque: "depois do vencimento" } }), semanaNova)!.includes("catalisador"), "confiança: catalisador depois do vencimento não conta");
+ok(!criteriosDe(ideiaConf({ contra: undefined }), semanaNova)!.includes("nada-contra"), "confiança: sem a lista do que pesa contra, não ganha o ponto");
+
+// ── as fórmulas: toda conta da página tem pergunta na ajuda, e o exemplo de lá bate com o código
+const FORMULAS: Record<string, string> = {
+  "confianca": "criteriosDe + confiancaDe (tipos.ts)",
+  "formula-niveis": "niveis (desfecho.ts)",
+  "formula-retorno": "retornoDe, desfechoDePreco (desfecho.ts)",
+  "formula-opcao": "valorNoVencimento, desfechoDeOpcao",
+  "formula-empate": "empate e ganho máximo no Payoff (Faixa.tsx)",
+  "formula-previsao": "desfechoDePrevisao, Contrato",
+  "formula-spy": "retornoNoPeriodo (desfecho.ts)",
+  "formula-registro": "resumo (desfecho.ts), Registro, Curva",
+  "formula-tamanho": "soma dos tamanhos na página da edição",
+  "formula-reserva": "retornoDaReserva (desfecho.ts), Reservar, Registro",
+  "formula-termometro": "Termometro, juro (formato.ts)",
+  "formula-numeros": "pct, preco, corDoRetorno (formato.ts)",
+  "formula-busca": "buscar, foraDoAssunto (perguntas.ts)",
+};
+const respostaDe = (id: string) => {
+  const p = AJUDA.flatMap((sec) => sec.perguntas).find((x) => x.id === id);
+  return p ? JSON.stringify(p.resposta) : "";
+};
+for (const [id, onde] of Object.entries(FORMULAS)) ok(respostaDe(id).includes('"formula"'), `fórmulas: #${id} tem a fórmula escrita (${onde})`);
+const porcento = (r: number) => `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r * 100).toFixed(1).replace(".", ",")}%`;
+const n100 = niveis({ direcao: "alta", alvo: 7, stop: 4 }, 100);
+const n100b = niveis({ direcao: "baixa", alvo: 7, stop: 4 }, 100);
+ok(respostaDe("formula-niveis").includes(`alvo US$ ${n100.alvo} e stop US$ ${n100.stop}`) && respostaDe("formula-niveis").includes(`alvo US$ ${n100b.alvo} e stop US$ ${n100b.stop}`), "fórmulas: o exemplo de alvo e stop bate com niveis()");
+const travaExemplo = { ...trava, strikes: [0, 4] as [number, number], custo: 1.9 };
+const r103 = valorNoVencimento(travaExemplo, 100, 103) / 1.9 - 1;
+const rMax = valorNoVencimento(travaExemplo, 100, 120) / 1.9 - 1;
+ok(respostaDe("formula-opcao").includes(porcento(r103)) && respostaDe("formula-opcao").includes(porcento(rMax)), `fórmulas: o exemplo da trava bate com valorNoVencimento() (${porcento(r103)}, ${porcento(rMax)})`);
+ok(respostaDe("formula-empate").includes(porcento(rMax)) && respostaDe("formula-empate").includes(porcento((travaExemplo.strikes[0] + travaExemplo.custo) / 100)), "fórmulas: empate e ganho máximo da trava batem com a conta");
+const r24 = desfechoDePrevisao({ ...fed, preco: 0.24, resolucao: { ganhou: true, em: "2026-12-10" } }).retorno as number;
+ok(respostaDe("formula-previsao").includes(porcento(r24)) && respostaDe("previsao").includes(porcento(r24)), `fórmulas: o contrato a 24¢ dá ${porcento(r24)}, nas duas respostas`);
+const doExemplo = resumo([
+  { ideia: { ...alta, tamanho: 4 }, semana: "2026-11-09", desfecho: { estado: "fechada", retorno: 0.04, diaSaida: "2026-11-12" }, spy: 0.01 },
+  { ideia: { ...alta, id: "b", tamanho: 3 }, semana: "2026-11-09", desfecho: { estado: "fechada", retorno: -0.05, diaSaida: "2026-11-13" }, spy: 0.01 },
+]);
+const carteira2 = `${doExemplo.carteira > 0 ? "+" : "−"}${Math.abs(doExemplo.carteira * 100).toFixed(2).replace(".", ",")}%`;
+ok(respostaDe("formula-registro").includes(`${Math.round((doExemplo.acertos / doExemplo.fechadas) * 100)}%`) && respostaDe("formula-registro").includes(porcento(doExemplo.medio!)) && respostaDe("formula-registro").includes(carteira2), `fórmulas: o exemplo do registro bate com resumo() (${porcento(doExemplo.medio!)}, carteira ${carteira2})`);
+ok(respostaDe("formula-spy").includes(porcento(retornoNoPeriodo([vela("2026-11-09", 600, 615, 598, 605), vela("2026-11-10", 605, 614, 603, 612)], "2026-11-09", "2026-11-10")!)), "fórmulas: o exemplo do SPY bate com retornoNoPeriodo()");
 
 // ── a caixa de perguntas: o filtro de assunto recusa antes de gastar a IA
 const busca = montarBusca("bancada", EDICOES);
@@ -247,6 +323,10 @@ const DENTRO: [string, string?][] = [
   ["quando sai a edição nova?", "ajuda:quando-sai"],
   ["o que é wash sale", "ajuda:perdas"],
   ["a caixa de perguntas guarda meus dados?", "ajuda:dados-visitante"],
+  ["Como é calculado o nível de confiança?", "ajuda:confianca"],
+  ["como é calculado o retorno da opção?", "ajuda:formula-opcao"],
+  ["qual a fórmula do retorno médio?", "ajuda:formula-registro"],
+  ["como a caixa escolhe os trechos?", "ajuda:formula-busca"],
   ["como o stop funciona?"],
   ["o que é uma trava de opção?"],
   ["por que a ideia da Microsoft?"],
@@ -262,7 +342,9 @@ const DENTRO: [string, string?][] = [
 for (const [q, esperado] of DENTRO) {
   const achados = buscar(busca, q);
   ok(!foraDoAssunto(busca, q, achados), `perguntas: "${q}" passa no filtro`);
-  if (esperado) ok(achados[0]?.trecho.id === esperado, `perguntas: "${q}" acha ${esperado} primeiro (achou ${achados[0]?.trecho.id ?? "nada"})`);
+  // Entre os 3 primeiros: vão 6 pra IA, e edição nova mexe na ordem sem estragar a resposta.
+  const top = achados.slice(0, 3).map((a) => a.trecho.id);
+  if (esperado) ok(top.includes(esperado), `perguntas: "${q}" acha ${esperado} entre os 3 primeiros (${top.join(", ") || "nada"})`);
 }
 // "previsão do tempo" passa daqui ("previsão" é palavra do Mercado): fica pra segunda barreira, a instrução.
 for (const q of [

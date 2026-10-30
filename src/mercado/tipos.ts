@@ -43,7 +43,20 @@ type Comum = {
   vence: string;
   /** % da carteira. Perfil moderado: no máximo 5. */
   tamanho: number;
+  /**
+   * Desde `FORMULA_DA_CONFIANCA`, é conta: 1 + os `CRITERIOS` que a ideia
+   * atende (`criteriosDe`), e o teste confere. Antes disso, foi julgamento
+   * da edição — e fica como foi publicado.
+   */
   confianca: 1 | 2 | 3 | 4 | 5;
+  /** O evento com data que deve mexer no preço dentro do prazo: balanço, dado, votação, reunião. */
+  catalisador?: { dia: string; oque: string };
+  /**
+   * O que pesa contra a ideia hoje, escrito na publicação. Lista vazia é
+   * "nada relevante contra" — e vale um critério da confiança. Obrigatório
+   * desde a fórmula; as edições anteriores não têm.
+   */
+  contra?: string[];
 };
 
 /** Ação, ETF ou cripto: alvo e stop em % a partir da abertura da entrada. */
@@ -160,6 +173,35 @@ export type Edicao = {
   revisao?: string;
   adendos?: { em: string; texto: string }[];
 };
+
+// ── a confiança
+
+/** A partir desta segunda a confiança é a conta abaixo; antes, era julgamento da edição. */
+export const FORMULA_DA_CONFIANCA = "2026-11-09";
+
+/** Cada critério atendido soma 1 à confiança, que começa em 1. Quatro critérios: de 1 a 5. */
+export const CRITERIOS = {
+  variadas: "Três ou mais bases de tipos diferentes",
+  historico: "Uma base de padrão histórico, com fonte",
+  catalisador: "Um catalisador com data dentro do prazo",
+  "nada-contra": "Nada relevante pesando contra",
+} as const;
+export type Criterio = keyof typeof CRITERIOS;
+
+/** Os critérios que a ideia atende. Null pra edição de antes da fórmula, que não tem como ser medida. */
+export function criteriosDe(ideia: Ideia, semana: string): Criterio[] | null {
+  if (semana < FORMULA_DA_CONFIANCA) return null;
+  const c: Criterio[] = [];
+  if (new Set(ideia.bases.map((b) => b.tipo)).size >= 3) c.push("variadas");
+  if (ideia.bases.some((b) => b.tipo === "historico" && b.fonte)) c.push("historico");
+  const k = ideia.catalisador;
+  if (k && k.dia >= semana && k.dia <= ideia.vence) c.push("catalisador");
+  if (ideia.contra && ideia.contra.length === 0) c.push("nada-contra");
+  return c;
+}
+
+/** confiança = 1 + critérios atendidos. */
+export const confiancaDe = (criterios: Criterio[]) => 1 + criterios.length;
 
 export const NOME_INSTRUMENTO: Record<Instrumento, string> = {
   acao: "Ação",

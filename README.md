@@ -210,7 +210,10 @@ the same period. On paper: nothing here places an order.
   each card, the scoring rules, quotes, risks, US taxes and a glossary, with accent-insensitive search and an
   anchor per question (`/mercado/ajuda/#entrada`). The content is data (`src/mercado/ajuda.ts`); answers flagged
   `so: 'bancada'` (the booking how-to) are left out here. Each answer describes what the code does: change a
-  rule, change its answer.
+  rule, change its answer. A section, "As fórmulas", writes out every calculation the page makes (price levels,
+  returns, options, break-even, prediction markets, SPY, the record, the gauge, rounding, the search score and
+  confidence) with a worked example that `npm run test:mercado` recomputes with the real code. Confidence (1–5)
+  is itself a formula since the 9 Nov 2026 edition: 1 + criteria met (`criteriosDe` in `src/mercado/tipos.ts`).
 - **Ask the base** — a question box at the top of the help page. Small RAG, no vector store
   (`src/mercado/perguntas.ts`): the FAQ, glossary and editions become excerpts, BM25 search without accents
   finds the best ones, and Gemini answers from those alone, citing them. An off-topic question is refused before

@@ -18,7 +18,7 @@
  * servidor do Bancada, no navegador e no build da OTech.
  */
 import { GLOSSARIO, ajudaDe, type Bloco, type Site } from "./ajuda";
-import { NOME_BASE, NOME_INSTRUMENTO, type Edicao, type Ideia } from "./tipos";
+import { CRITERIOS, NOME_BASE, NOME_INSTRUMENTO, criteriosDe, type Edicao, type Ideia } from "./tipos";
 
 export type Trecho = {
   /** "ajuda:entrada", "ideia:2026-11-02-msft", "agenda:2026-11-02"… Único na base. */
@@ -79,14 +79,30 @@ export function palavras(texto: string): string[] {
 
 const textoDe = (blocos: Bloco[]) =>
   blocos
-    .map((b) => (typeof b === "string" ? b : "lista" in b ? b.lista.join(" ") : b.fluxo.map((p) => `${p.titulo}: ${p.texto}`).join(" ")))
+    .map((b) =>
+      typeof b === "string"
+        ? b
+        : "lista" in b
+          ? b.lista.join(" ")
+          : "formula" in b
+            ? b.formula.map((l) => l.replace(/\s+/g, " ")).join(". ")
+            : b.fluxo.map((p) => `${p.titulo}: ${p.texto}`).join(" "),
+    )
     .join(" ")
     .replace(/\*\*|`/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 
 const pct = (n: number) => `${n}%`;
 
-function descreverIdeia(i: Ideia): string {
+/** "3 de 5 = 1 + três ou mais bases… + um catalisador…", ou o aviso de que foi julgamento. */
+function confianca(i: Ideia, semana: string): string {
+  const c = criteriosDe(i, semana);
+  if (!c) return `${i.confianca} de 5, por julgamento da edição (antes da fórmula da confiança)`;
+  const nomes = c.map((k) => CRITERIOS[k].toLowerCase());
+  return `${i.confianca} de 5 = 1${nomes.map((n) => ` + ${n}`).join("")}`;
+}
+
+function descreverIdeia(i: Ideia, semana: string): string {
   const partes = [`${i.titulo}. ${i.tese}`, `Instrumento: ${NOME_INSTRUMENTO[i.instrumento]}.`];
   if (i.instrumento === "previsao") {
     partes.push(`Mercado: ${i.mercado}, no ${i.casa}. Lado comprado: ${i.lado}, a ${Math.round(i.preco * 100)} centavos.`);
@@ -97,10 +113,12 @@ function descreverIdeia(i: Ideia): string {
     else partes.push(`Alvo ${pct(i.alvo)} e stop ${pct(i.stop)} a partir da entrada.`);
   }
   partes.push(
-    `Horizonte: ${i.horizonte}, vence em ${i.vence}. Tamanho: ${pct(i.tamanho)} da carteira. Confiança ${i.confianca} de 5.`,
+    `Horizonte: ${i.horizonte}, vence em ${i.vence}. Tamanho: ${pct(i.tamanho)} da carteira. Confiança ${confianca(i, semana)}.`,
     `Bases: ${i.bases.map((b) => `${NOME_BASE[b.tipo]}: ${b.texto}${b.fonte ? ` (${b.fonte.nome})` : ""}`).join(" ")}`,
     `O que mata a ideia: ${i.invalida}`,
   );
+  if (i.catalisador) partes.push(`Catalisador: ${i.catalisador.oque}, em ${i.catalisador.dia}.`);
+  if (i.contra) partes.push(i.contra.length ? `Pesa contra: ${i.contra.join(" ")}` : "Nada relevante pesa contra, segundo a edição.");
   return partes.join(" ");
 }
 
@@ -118,7 +136,7 @@ export function baseDoMercado(site: Site, edicoes: Edicao[]): Trecho[] {
     t.push({ id: `edicao:${semana}`, titulo: `Edição da ${da}: ${e.manchete}`, texto: `${e.leitura} Postura ${e.postura}. Publicada em ${e.publicadaEm}.`, semana });
     for (const i of e.ideias) {
       const nome = i.instrumento === "previsao" ? `${i.casa}: ${i.mercado}` : i.ativo;
-      t.push({ id: `ideia:${i.id}`, titulo: `Ideia ${nome} (${da})`, texto: descreverIdeia(i), semana });
+      t.push({ id: `ideia:${i.id}`, titulo: `Ideia ${nome} (${da})`, texto: descreverIdeia(i, semana), semana });
     }
     t.push({ id: `termometro:${semana}`, titulo: `Termômetro da ${da}`, texto: e.termometro.map((x) => `${x.nome}${x.valor !== undefined ? ` ${x.valor}` : ""}: ${x.leitura}`).join(" "), semana });
     if (e.evitar.length) t.push({ id: `evitar:${semana}`, titulo: `O que evitar na ${da}`, texto: e.evitar.map((x) => `${x.ativo}: ${x.porque}`).join(" "), semana });
@@ -155,7 +173,8 @@ export const TEMAS = [
   "banco", "dado", "tabela", "arquitetura", "estrutura", "tecnologia", "sistema", "servidor", "funcao", "api",
   "deploy", "publicacao", "vercel", "github", "git", "codigo", "teste", "pesquisa", "sessao", "claude",
   "anthropic", "gemini", "google", "rag", "busca", "caixa", "seguranca", "chave", "privacidade", "next", "nextjs",
-  "react", "vite", "prisma", "postgres", "typescript", "cdn", "cache", "espelho",
+  "react", "vite", "prisma", "postgres", "typescript", "cdn", "cache", "espelho", "formula", "calculo", "calcula",
+  "calculado", "calculada", "criterio", "catalisador", "arredonda", "arredondamento", "bm25",
 ];
 
 // ── a busca
