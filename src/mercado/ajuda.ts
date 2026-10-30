@@ -9,6 +9,10 @@
  * Marcação mínima dentro dos textos: `**negrito**`, `[texto](https://…)` pra
  * fonte, `[texto](#id)` pra outra pergunta e `` `código` ``. Nada de HTML.
  *
+ * Toda conta que a página faz tem a sua fórmula na seção "As fórmulas", com
+ * um exemplo — e `scripts/testar-mercado.ts` refaz o exemplo com o código de
+ * verdade. Conta nova na tela, fórmula nova aqui.
+ *
  * ⚠️ Este arquivo é PÚBLICO: a cópia dele mora no repositório aberto da OTech,
  * inclusive as perguntas com `so: "bancada"`. Nada de endereço do app, modelo
  * de acesso, servidor do banco ou chave aqui.
@@ -22,10 +26,11 @@
 export type Site = "bancada" | "otech";
 
 /**
- * Um parágrafo, uma lista de itens curtos, ou um fluxo: passos em ordem,
- * desenhados como caixas ligadas por seta.
+ * Um parágrafo, uma lista de itens curtos, um fluxo (passos em ordem,
+ * desenhados como caixas) ou uma fórmula (linhas em fonte de código, como se
+ * escreve a conta).
  */
-export type Bloco = string | { lista: string[] } | { fluxo: { titulo: string; texto: string }[] };
+export type Bloco = string | { lista: string[] } | { fluxo: { titulo: string; texto: string }[] } | { formula: string[] };
 
 export type Pergunta = {
   /** Âncora da pergunta: `#entrada` leva direto pra ela. Único no arquivo inteiro. */
@@ -203,7 +208,7 @@ export const AJUDA: Secao[] = [
               "**O instrumento, o horizonte e o vencimento**: semana ou mês, e o último dia da ideia.",
               "**O título e a tese**: a aposta, em uma ou duas linhas.",
               "**O desenho**: a régua de stop, entrada e alvo; o gráfico da trava, numa opção; ou o preço do contrato, numa previsão.",
-              "**Tamanho e confiança.**",
+              "**Tamanho e confiança** — a confiança é uma conta, de 1 a 5 ([como](#confianca)).",
               "**A situação**: aguardando, aberta, fechada — sempre com data.",
               "**\"Por quê\"**: as bases, cada uma com o link da fonte, e \"o que mata a ideia\".",
             ],
@@ -265,13 +270,6 @@ export const AJUDA: Secao[] = [
         ],
       },
       {
-        id: "confianca",
-        pergunta: "O que quer dizer a confiança de 1 a 5?",
-        resposta: [
-          "Quão forte é a evidência, na opinião da edição. **3 já é uma ideia boa**; 2 é uma aposta com base, mas com muita coisa contra; 4 e 5 são raros. Confiança não muda a conta — muda o tamanho que faz sentido pôr.",
-        ],
-      },
-      {
         id: "bases",
         pergunta: "O que são as \"bases\"?",
         resposta: [
@@ -317,7 +315,7 @@ export const AJUDA: Secao[] = [
         pergunta: "Como funciona uma ideia de mercado de previsão?",
         resposta: [
           "Compra-se um contrato que **paga US$ 1 se a coisa acontecer** e zero se não. O preço é a probabilidade que o mercado dá: a 24¢, o mercado acha 24% de chance.",
-          "Se ganhar, o retorno é 1 ÷ preço − 1 (a 24¢, +317%). Se perder, −100%. Por isso essas ideias são sempre pequenas, e só entram quando a edição tem um motivo explícito pra achar o preço errado.",
+          "Se ganhar, o retorno é 1 ÷ preço − 1 (a 24¢, +316,7% — [a fórmula](#formula-previsao)). Se perder, −100%. Por isso essas ideias são sempre pequenas, e só entram quando a edição tem um motivo explícito pra achar o preço errado.",
         ],
       },
     ],
@@ -368,7 +366,7 @@ export const AJUDA: Secao[] = [
         id: "opcao-resultado",
         pergunta: "Como uma opção é medida?",
         resposta: [
-          "Vai **até o vencimento** e vale o **valor intrínseco** naquele fechamento — quanto ela valeria se fosse exercida. O retorno é esse valor dividido pelo custo estimado na publicação, menos 1.",
+          "Vai **até o vencimento** e vale o **valor intrínseco** naquele fechamento — quanto ela valeria se fosse exercida. O retorno é esse valor dividido pelo custo estimado na publicação, menos 1 ([a fórmula, com exemplo](#formula-opcao)).",
           "Enquanto não vence, a tela mostra **\"se vencesse hoje\"**: o valor intrínseco com o preço de agora, sem o valor de tempo (que só a corretora sabe). É uma referência, não o preço de mercado da opção.",
         ],
       },
@@ -383,7 +381,7 @@ export const AJUDA: Secao[] = [
         id: "spy",
         pergunta: "Por que cada ideia é comparada com o SPY?",
         resposta: [
-          "Porque ganhar 2% numa semana em que a bolsa subiu 3% é perder pro mais simples dos investimentos. O SPY (o ETF do S&P 500) é medido **no mesmo período** de cada ideia: da abertura do dia da entrada ao fechamento do dia da saída.",
+          "Porque ganhar 2% numa semana em que a bolsa subiu 3% é perder pro mais simples dos investimentos. O SPY (o ETF do S&P 500) é medido **no mesmo período** de cada ideia: da abertura do dia da entrada ao fechamento do dia da saída ([a fórmula](#formula-spy)).",
           "Previsão não tem comparação com o SPY: o período e o tipo de risco não se comparam.",
         ],
       },
@@ -399,6 +397,7 @@ export const AJUDA: Secao[] = [
               "**Bateu o SPY** — quantas ideias renderam mais que o SPY no mesmo período.",
             ],
           },
+          "As contas de cada número, com exemplo, estão em [as fórmulas do registro](#formula-registro).",
           "O gráfico desenha a carteira das ideias (linha verde) contra o mesmo dinheiro no SPY (tracejada), ideia fechada a ideia fechada. Toque ou passe o dedo pra ler cada ponto. A tabela lista cada ideia fechada, da mais recente pra mais antiga.",
         ],
       },
@@ -444,6 +443,212 @@ export const AJUDA: Secao[] = [
         so: "otech",
         resposta: [
           "Aqui a conta é refeita a cada visita, com as mesmas regras e os mesmos preços diários — então o resultado de uma ideia fechada fica igual, a não ser que o provedor revise uma cotação antiga. O registro oficial, gravado uma vez quando a ideia fecha, fica no app privado onde as edições nascem.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "formulas",
+    titulo: "As fórmulas",
+    resumo: "Toda conta que a página faz, com a fórmula e um exemplo. Se o código mudar, a fórmula aqui muda junto — o teste refaz cada exemplo com o código de verdade.",
+    perguntas: [
+      {
+        id: "confianca",
+        pergunta: "Como a confiança (1 a 5) é calculada?",
+        resposta: [
+          "O nível de confiança é calculado, não opinado. Começa em 1 e ganha 1 ponto por critério que a ideia atende:",
+          { formula: ["confiança = 1 + critérios atendidos", "vai de 1 (nenhum) a 5 (os quatro)"] },
+          {
+            lista: [
+              "**Bases variadas** — três ou mais bases de tipos diferentes (balanço, dado, notícia, mercado de previsão, Congresso, histórico, fluxo).",
+              "**Padrão histórico** — uma base do tipo histórico, com fonte: um padrão estudado, não um palpite.",
+              "**Catalisador** — um evento com data entre a segunda da edição e o vencimento da ideia (balanço, dado, votação, reunião do Fed).",
+              "**Nada contra** — a edição lista o que pesa contra a ideia; se a lista está vazia, ganha o ponto.",
+            ],
+          },
+          "Exemplo: três tipos de base e um balanço dentro do prazo, sem padrão histórico e com um ponto contra → 1 + 1 + 1 = **3**.",
+          "Vale desde a edição de **9 nov 2026**. Na edição de 2 nov 2026 a confiança foi julgamento da edição, sem fórmula, e fica como foi publicada ([por quê](#reescrever)).",
+          "A confiança **não entra no resultado** — nenhuma conta do registro usa ela. Ela orienta o tamanho que faz sentido pôr.",
+        ],
+      },
+      {
+        id: "formula-niveis",
+        pergunta: "Como o preço do alvo e do stop é calculado?",
+        resposta: [
+          "A edição escreve alvo e stop em %; o preço sai da entrada (a abertura do pregão da entrada — [quando](#entrada)):",
+          {
+            formula: [
+              "Alta:   alvo = entrada × (1 + alvo%)    stop = entrada × (1 − stop%)",
+              "Baixa:  alvo = entrada × (1 − alvo%)    stop = entrada × (1 + stop%)",
+            ],
+          },
+          "Exemplo: entrada US$ 100, alvo 7% e stop 4%. Numa alta, alvo US$ 107 e stop US$ 96; numa baixa, alvo US$ 93 e stop US$ 104.",
+        ],
+      },
+      {
+        id: "formula-retorno",
+        pergunta: "Como o retorno de ação, ETF e cripto é calculado?",
+        resposta: [
+          {
+            formula: [
+              "Alta:   retorno = saída ÷ entrada − 1",
+              "Baixa:  retorno = 1 − saída ÷ entrada",
+            ],
+          },
+          "A **saída** é o preço do alvo ou do stop, a abertura (quando o pregão já abre além da linha — [gap](#gap)) ou o fechamento do vencimento. Enquanto a ideia está aberta, a saída é o último fechamento.",
+          "Exemplo: entrada US$ 100 e saída US$ 107 numa alta: **+7,0%**. Numa baixa, saída US$ 93: também **+7,0%**. O retorno é sobre o dinheiro posto **na ideia**, não na carteira.",
+        ],
+      },
+      {
+        id: "formula-opcao",
+        pergunta: "Como o retorno de uma opção é calculado?",
+        resposta: [
+          "O retorno da opção é medido no vencimento, pelo valor intrínseco. Na opção, strikes e custo vêm em % do preço do ativo na entrada:",
+          {
+            formula: [
+              "strike = entrada × (1 + strike%)",
+              "custo  = entrada × custo%",
+              "Alta:   intrínseco = máx(0, preço − strike comprado)",
+              "Baixa:  intrínseco = máx(0, strike comprado − preço)",
+              "Trava:  intrínseco ≤ |strike vendido − strike comprado|",
+              "retorno = intrínseco no vencimento ÷ custo − 1",
+            ],
+          },
+          "Exemplo: trava de alta com strikes 0% e 4%, custo 1,9%, entrada US$ 100. Strikes US$ 100 e US$ 104, custo US$ 1,90. Fechando a US$ 103 no vencimento, vale US$ 3: 3 ÷ 1,90 − 1 = **+57,9%**. De US$ 104 pra cima vale US$ 4, o máximo: **+110,5%**. Abaixo de US$ 100, **−100%**.",
+          "Enquanto não vence, a tela faz a mesma conta com o último fechamento (\"se vencesse hoje\"), sem o valor de tempo.",
+        ],
+      },
+      {
+        id: "formula-empate",
+        pergunta: "Como o empate e o ganho máximo da trava são calculados?",
+        resposta: [
+          "No gráfico da trava, em variação do ativo desde a entrada:",
+          {
+            formula: [
+              "empate (alta)  = strike comprado% + custo%",
+              "empate (baixa) = strike comprado% − custo%",
+              "ganho máximo   = |strike vendido% − strike comprado%| ÷ custo% − 1",
+            ],
+          },
+          "Exemplo: strikes 0% e 4%, custo 1,9% — empate com o ativo em **+1,9%**, ganho máximo 4 ÷ 1,9 − 1 = **+110,5%**. O gráfico desenha o retorno de [a conta da opção](#formula-opcao) pra cada variação do ativo.",
+        ],
+      },
+      {
+        id: "formula-previsao",
+        pergunta: "Como o retorno de uma previsão é calculado?",
+        resposta: [
+          {
+            formula: [
+              "Ganhou:  retorno = 1 ÷ preço − 1",
+              "Perdeu:  retorno = −100%",
+              "Quanto paga = 1 ÷ preço vezes o que custou",
+            ],
+          },
+          "Exemplo: contrato a 24¢. Se acontecer, paga 4,2× o que custou e o retorno é **+316,7%**; se não, −100%. Até a [resolução](#previsao-resultado), o retorno fica em branco.",
+        ],
+      },
+      {
+        id: "formula-spy",
+        pergunta: "Como o SPY do mesmo período é calculado?",
+        resposta: [
+          { formula: ["SPY no período = fechamento do SPY no dia da saída ÷ abertura do SPY no dia da entrada − 1"] },
+          "Ideia aberta: até o último fechamento. Cripto anda no fim de semana e a bolsa não: se a entrada ou a saída cai num dia sem pregão, vale o primeiro pregão a partir da entrada e o último até a saída. Previsão não tem SPY.",
+          "Exemplo: SPY abre a US$ 600 no dia da entrada e fecha a US$ 612 no dia da saída: **+2,0%**.",
+        ],
+      },
+      {
+        id: "formula-registro",
+        pergunta: "Como os números do registro de acertos são calculados?",
+        resposta: [
+          "Só entram ideias **fechadas** (saíram por alvo, stop, vencimento ou resolução). Aberta e aguardando ficam de fora.",
+          {
+            formula: [
+              "Acerto          = fechadas com retorno > 0 ÷ fechadas",
+              "Retorno médio   = soma dos retornos ÷ fechadas",
+              "Carteira        = soma de (tamanho% × retorno)",
+              "Carteira no SPY = soma de (tamanho% × SPY no período)",
+              "Bateu o SPY     = fechadas com retorno > SPY ÷ fechadas com SPY",
+              "Amostra pequena = menos de 20 fechadas",
+            ],
+          },
+          "O acerto em % é arredondado pro inteiro. Previsão não tem SPY: na carteira do SPY ela soma zero, e fica fora do \"bateu o SPY\". A curva do gráfico é a soma acumulada, ideia a ideia, na ordem da saída.",
+          "Exemplo: duas fechadas, uma com +4,0% e tamanho 4%, outra com −5,0% e tamanho 3%. Acerto 1 de 2 = **50%**; retorno médio (4 − 5) ÷ 2 = **−0,5%**; carteira 4% × 4% + 3% × (−5%) = **+0,01%**.",
+        ],
+      },
+      {
+        id: "formula-tamanho",
+        pergunta: "O tamanho é calculado?",
+        resposta: [
+          "Não: o tamanho é escolhido pela edição, até **5% por ideia** (perfil moderado), e o teste recusa edição que passe disso. As contas que usam o tamanho:",
+          {
+            formula: [
+              "Quanto a semana usa = soma dos tamanhos das ideias da edição",
+              "Em dinheiro = tamanho% × carteira   (4% de US$ 10 mil = US$ 400)",
+            ],
+          },
+        ],
+      },
+      {
+        id: "formula-reserva",
+        pergunta: "Como o resultado da minha reserva é calculado?",
+        so: "bancada",
+        resposta: [
+          {
+            formula: [
+              "Sugestão         = tamanho% × US$ 10.000",
+              "Ação, ETF, cripto: retorno = a conta da ideia, com o seu preço de entrada e de saída",
+              "Opção e previsão:  retorno = o da ideia",
+              "Resultado        = valor reservado × retorno",
+              "Suas reservas    = soma dos resultados das reservas fechadas",
+            ],
+          },
+          "Sem preço próprio, valem a entrada e a saída da ideia. Exemplo: US$ 400 reservados numa ideia que fechou em +4,0% = **+US$ 16**.",
+        ],
+      },
+      {
+        id: "formula-termometro",
+        pergunta: "Como os números do termômetro são calculados?",
+        resposta: [
+          {
+            formula: [
+              "Variação = (último − fechamento da véspera) ÷ fechamento da véspera",
+              "Linha do mês = os últimos 22 fechamentos (cerca de um mês de pregões)",
+              "Cor da linha = verde se o último ≥ o primeiro; vermelha se não",
+            ],
+          },
+          "Juro de 10 anos: o provedor às vezes manda o número ×10 (45,1 em vez de 4,51). Acima de 20 não existe juro americano, então a página divide por 10.",
+          "Exemplo: véspera 6.000 pontos, último 6.090: **+1,50%**.",
+        ],
+      },
+      {
+        id: "formula-numeros",
+        pergunta: "Como os números são arredondados e coloridos?",
+        resposta: [
+          {
+            formula: [
+              "Porcentagem = uma casa decimal, sempre com sinal (+4,2%, −1,0%)",
+              "              duas casas na carteira do registro e na variação do termômetro",
+              "Preço       = duas casas até 1.000; nenhuma acima (bitcoin, S&P 500)",
+              "Cor         = verde acima de +0,05%; vermelho abaixo de −0,05%; cinza no meio",
+            ],
+          },
+          "O sinal vem sempre junto do número: a cor nunca é a única pista de ganho ou perda.",
+        ],
+      },
+      {
+        id: "formula-busca",
+        pergunta: "Como a caixa de perguntas escolhe os trechos?",
+        resposta: [
+          "Por uma conta de relevância chamada BM25, feita no próprio site, sem IA:",
+          {
+            formula: [
+              "nota do trecho = soma, pra cada palavra da pergunta, de:",
+              "idf × f × 2,2 ÷ (f + 1,2 × (0,25 + 0,75 × tamanho ÷ tamanho médio))",
+              "idf = ln(1 + (N − n + 0,5) ÷ (n + 0,5))",
+            ],
+          },
+          "**f** é quantas vezes a palavra aparece no trecho (o título conta em dobro); **tamanho** é o número de palavras do trecho; **N** é o total de trechos; **n**, quantos têm a palavra. As palavras são comparadas sem acento e sem plural simples, e as vazias (de, que, como…) ficam de fora.",
+          "A pergunta é recusada sem chamar a IA se não tiver nenhuma palavra do assunto ou se a melhor nota ficar abaixo de **1,5**. Se passar, os **6** trechos de nota mais alta vão pro Gemini.",
         ],
       },
     ],
@@ -838,8 +1043,8 @@ export const AJUDA: Secao[] = [
           {
             lista: [
               "Cada regra da conta: entrada depois da publicação, stop antes do alvo no mesmo dia, saída na abertura no gap, vencimento, travas, previsões, reservas.",
-              "Toda edição: tamanho até 5%, pelo menos duas bases, \"o que mata a ideia\" escrito, strike do lado certo, semana começando numa segunda.",
-              "Este FAQ: nenhuma pergunta repetida, nenhum link interno quebrado.",
+              "Toda edição: tamanho até 5%, pelo menos duas bases, \"o que mata a ideia\" escrito, strike do lado certo, semana começando numa segunda, e a confiança igual à [conta](#confianca).",
+              "Este FAQ: nenhuma pergunta repetida, nenhum link interno quebrado, toda conta da página com a sua [fórmula](#formulas) — e cada exemplo das fórmulas refeito com o código de verdade.",
               "A caixa de perguntas: pergunta fora do assunto é recusada antes de chamar a IA; a resposta só usa a base.",
               "A tela num navegador de verdade, com cotações de teste: uma ideia no alvo, uma no stop, uma aberta, sem rolagem lateral no celular.",
             ],
@@ -854,7 +1059,7 @@ export const AJUDA: Secao[] = [
           {
             fluxo: [
               { titulo: "Base", texto: "Este FAQ, o glossário e as edições publicadas, recortados em trechos curtos." },
-              { titulo: "Busca", texto: "As palavras da pergunta (sem acento) são comparadas com cada trecho; os mais parecidos são escolhidos." },
+              { titulo: "Busca", texto: "As palavras da pergunta (sem acento) são comparadas com cada trecho; os mais parecidos são escolhidos ([a conta](#formula-busca))." },
               { titulo: "Filtro", texto: "Pergunta sem nenhuma palavra do Mercado, ou sem trecho que tenha a ver com ela, é recusada ali mesmo — sem chamar a IA." },
               { titulo: "Resposta", texto: "O Gemini recebe só os trechos escolhidos e a pergunta, com a instrução de responder apenas com eles — e de recusar o que não for sobre o Mercado." },
               { titulo: "Fontes", texto: "A resposta vem com os trechos usados, cada um com link pra pergunta ou pra edição." },

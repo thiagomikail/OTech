@@ -56,6 +56,19 @@ function Fluxo({ passos }: { passos: { titulo: string; texto: string }[] }) {
   );
 }
 
+/** A conta como se escreve: fonte de código, uma linha por fórmula; no celular a linha longa quebra em vez de sumir pro lado. */
+function Formula({ linhas }: { linhas: string[] }) {
+  return (
+    <pre className="whitespace-pre-wrap break-words rounded-sm border border-line bg-canvas px-3 py-2.5 font-mono text-[13px] leading-relaxed text-ink">
+      {linhas.map((l, i) => (
+        <span key={i} className="block pl-4 -indent-4">
+          {l}
+        </span>
+      ))}
+    </pre>
+  );
+}
+
 function Resposta({ blocos }: { blocos: Bloco[] }) {
   return (
     <div className="space-y-3 pb-4 text-[15px] leading-relaxed text-ink-2">
@@ -66,6 +79,8 @@ function Resposta({ blocos }: { blocos: Bloco[] }) {
           </p>
         ) : 'fluxo' in b ? (
           <Fluxo key={i} passos={b.fluxo} />
+        ) : 'formula' in b ? (
+          <Formula key={i} linhas={b.formula} />
         ) : (
           <ul key={i} className="ml-1 space-y-1.5">
             {b.lista.map((item, j) => (
@@ -87,7 +102,11 @@ function Resposta({ blocos }: { blocos: Bloco[] }) {
 const plano = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const SECOES = ajudaDe('otech');
 const textoDe = (blocos: Bloco[]) =>
-  blocos.map((b) => (typeof b === 'string' ? b : 'lista' in b ? b.lista.join(' ') : b.fluxo.map((p) => `${p.titulo} ${p.texto}`).join(' '))).join(' ');
+  blocos
+    .map((b) =>
+      typeof b === 'string' ? b : 'lista' in b ? b.lista.join(' ') : 'formula' in b ? b.formula.join(' ') : b.fluxo.map((p) => `${p.titulo} ${p.texto}`).join(' '),
+    )
+    .join(' ');
 
 /**
  * Como funciona o Mercado: o help/FAQ. O conteúdo é `src/mercado/ajuda.ts`,
