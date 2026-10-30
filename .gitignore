@@ -3,6 +3,10 @@ node_modules/
 
 # Build output
 dist/
+# `tsc -b` emits these next to the config (tsconfig.node.json has no noEmit); Vite would load a stale vite.config.js first
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Environment variables (contains API keys)
 .env
