@@ -2,14 +2,21 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link2, Search } from 'lucide-react';
 import { type Bloco, GLOSSARIO, ajudaDe } from '../ajuda';
 import Topo from '../components/Topo';
+import Perguntar from './Perguntar';
 
-/** `**negrito**`, `[texto](https://…)` e `[texto](#pergunta)` — a marcação de `src/mercado/ajuda.ts`. */
-function Texto({ s }: { s: string }) {
-  const partes = s.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
+/** `**negrito**`, `[texto](https://…)`, `[texto](#pergunta)` e `` `código` `` — a marcação de `src/mercado/ajuda.ts`. */
+export function Texto({ s }: { s: string }) {
+  const partes = s.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|`[^`]+`)/g);
   return (
     <>
       {partes.map((p, i) => {
         if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} className="font-semibold text-ink">{p.slice(2, -2)}</strong>;
+        if (p.length > 2 && p.startsWith('`') && p.endsWith('`'))
+          return (
+            <code key={i} className="rounded-sm bg-fill px-1 py-0.5 font-mono text-[0.88em] text-ink">
+              {p.slice(1, -1)}
+            </code>
+          );
         const link = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
         if (link) {
           const fora = !link[2].startsWith('#');
@@ -30,6 +37,25 @@ function Texto({ s }: { s: string }) {
   );
 }
 
+/** Passos em ordem, em caixas numeradas: uma coluna no celular, uma grade na tela larga. */
+function Fluxo({ passos }: { passos: { titulo: string; texto: string }[] }) {
+  return (
+    <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {passos.map((p, i) => (
+        <li key={i} className="rounded-sm border border-line bg-canvas p-3">
+          <p className="flex items-baseline gap-2">
+            <span className="font-mono text-[12px] font-semibold text-accent">{String(i + 1).padStart(2, '0')}</span>
+            <span className="font-semibold text-ink">{p.titulo}</span>
+          </p>
+          <p className="mt-1 text-[14px] leading-snug">
+            <Texto s={p.texto} />
+          </p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Resposta({ blocos }: { blocos: Bloco[] }) {
   return (
     <div className="space-y-3 pb-4 text-[15px] leading-relaxed text-ink-2">
@@ -38,6 +64,8 @@ function Resposta({ blocos }: { blocos: Bloco[] }) {
           <p key={i}>
             <Texto s={b} />
           </p>
+        ) : 'fluxo' in b ? (
+          <Fluxo key={i} passos={b.fluxo} />
         ) : (
           <ul key={i} className="ml-1 space-y-1.5">
             {b.lista.map((item, j) => (
@@ -58,7 +86,8 @@ function Resposta({ blocos }: { blocos: Bloco[] }) {
 /** Sem acento e em minúscula: "previsao" acha "previsão". */
 const plano = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const SECOES = ajudaDe('otech');
-const textoDe = (blocos: Bloco[]) => blocos.map((b) => (typeof b === 'string' ? b : b.lista.join(' '))).join(' ');
+const textoDe = (blocos: Bloco[]) =>
+  blocos.map((b) => (typeof b === 'string' ? b : 'lista' in b ? b.lista.join(' ') : b.fluxo.map((p) => `${p.titulo} ${p.texto}`).join(' '))).join(' ');
 
 /**
  * Como funciona o Mercado: o help/FAQ. O conteúdo é `src/mercado/ajuda.ts`,
@@ -118,6 +147,8 @@ export default function Ajuda() {
           Tudo o que a página faz e por quê: de onde vêm as ideias, como ler cada cartão, as regras que medem o acerto, as cotações, os
           riscos e o imposto. As respostas descrevem as regras que o código aplica — se a regra mudar, a resposta muda junto.
         </p>
+
+        <Perguntar />
 
         <div className="sticky top-11 z-40 -mx-4 mt-6 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
           <label className="relative block">

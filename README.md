@@ -201,8 +201,9 @@ the same period. On paper: nothing here places an order.
   publication; a day that touches both stop and target counts as the stop; a gap past the stop exits at the
   open; options go to expiry at intrinsic value against the cost estimated at publication.
 - **Mirrored from Bancada.** The editions are written in the private Bancada repo, where the same module also
-  keeps paper bookings. `src/mercado/tipos.ts`, `src/mercado/desfecho.ts`, `src/mercado/ajuda.ts` and
-  `src/mercado/edicoes/` are copies of Bancada's `lib/mercado/` and must stay byte-identical: the Monday run
+  keeps paper bookings. `src/mercado/tipos.ts`, `src/mercado/desfecho.ts`, `src/mercado/ajuda.ts`,
+  `src/mercado/perguntas.ts` and `src/mercado/edicoes/` are copies of Bancada's `lib/mercado/` and must stay
+  byte-identical: the Monday run
   copies the whole `edicoes/` folder over. A published edition is never rewritten — it only gains `resolucao`
   and dated `adendos`.
 - **Help/FAQ** at `/mercado/ajuda/`, linked from the edition's header and footer: what Mercado is, how to read
@@ -210,15 +211,24 @@ the same period. On paper: nothing here places an order.
   anchor per question (`/mercado/ajuda/#entrada`). The content is data (`src/mercado/ajuda.ts`); answers flagged
   `so: 'bancada'` (the booking how-to) are left out here. Each answer describes what the code does: change a
   rule, change its answer.
+- **Ask the base** — a question box at the top of the help page. Small RAG, no vector store
+  (`src/mercado/perguntas.ts`): the FAQ, glossary and editions become excerpts, BM25 search without accents
+  finds the best ones, and Gemini answers from those alone, citing them. An off-topic question is refused before
+  any AI call — in the page, and again in `api/perguntar.ts`, which repeats the search over `/mercado/base.json`
+  (written at build time by the `mercado-base` plugin in `vite.config.ts`, via `scripts/mercado-base.ts`). The
+  model is also told to answer `FORA_DO_ASSUNTO` for anything else. 300 characters per question, 4 a minute per
+  visitor and a global cap (in memory, per instance), nothing stored. The key stays on the server.
 - **Tests:** `npm run test:mercado` (scoring rules, the Yahoo parser, every edition's limits, the FAQ's ids and
-  anchors, the price function with the network stubbed) and `npm run test:mercado:e2e` (real Chrome against the build, with
+  anchors, which questions the box accepts and refuses, both functions with the network stubbed — including that
+  `api/perguntar.ts` and the page find the same excerpts) and `npm run test:mercado:e2e` (real Chrome against the build, with
   prices served from `tests/mercado/precos.json` on 20 Nov 2026).
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_GOOGLE_API_KEY` | Google AI Studio API key for Gemini (FMEA and PetriPLC) |
+| `VITE_GOOGLE_API_KEY` | Google AI Studio API key for Gemini (FMEA and PetriPLC). Bundled into the page by Vite. |
+| `GOOGLE_API_KEY` | Optional, server-only key for Mercado's question box (`api/perguntar.ts`). Without it the function falls back to `VITE_GOOGLE_API_KEY`. |
 
 ## License
 
