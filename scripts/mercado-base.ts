@@ -5,6 +5,7 @@
  * pra o `tsc -b` do vite.config não puxar o src/ pra dentro dele.
  */
 import { EDICOES } from '../src/mercado/edicoes';
+import { RODADAS } from '../src/mercado/edicoes/rodadas';
 import { pacoteDaBase } from '../src/mercado/perguntas';
 
-process.stdout.write(JSON.stringify(pacoteDaBase('otech', EDICOES)));
+process.stdout.write(JSON.stringify(pacoteDaBase('otech', EDICOES, RODADAS)));

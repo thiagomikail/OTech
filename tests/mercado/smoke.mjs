@@ -109,6 +109,7 @@ const card = (p, ativo) => p.locator('[data-testid="ideia"]').filter({ has: p.lo
   check('no prices: the gauge says so', body.includes('sem cotação agora'));
   check('no prices: the ideas wait for Monday', body.includes('Entra na abertura do primeiro pregão a partir de seg 2 nov'));
   check('no prices: the record starts empty, on purpose', body.includes('Nenhuma ideia fechou ainda'));
+  check('no prices: the run strip has no week to judge yet, only the checks', !(await text(p, '[data-testid="rodada"]')).includes('Rodada de') && (await text(p, '[data-testid="rodada"]')).includes('Cotação sem cotação agora'));
   check('no prices: no errors', errors.length === 0, errors.join(' | '));
   if (OUT) await p.screenshot({ path: `${OUT}/sem-cotacao-dark.png`, fullPage: true });
   await ctx.close();
@@ -129,11 +130,25 @@ for (const viewport of [
   check(`${tag}: the Fed bet waits for its resolution`, (await card(p, 'Kalshi').innerText()).includes('Aguardando o mercado resolver'));
   const body = await text(p);
   check(`${tag}: the record counts two closed, one up`, body.includes('1 de 2 fecharam no azul'));
+  check(`${tag}: no record of the 16 Nov run, and the strip says so`, (await text(p, '[data-testid="rodada"]')).includes('A rodada de seg 16 nov não deu sinal'));
   check(`${tag}: and warns the sample is small`, body.includes('Amostra pequena'));
   const width = await p.evaluate(() => document.documentElement.scrollWidth);
   check(`${tag}: no sideways scroll`, width <= viewport.width, `${width}px`);
   check(`${tag}: no errors`, errors.length === 0, errors.join(' | '));
   if (OUT) await p.screenshot({ path: `${OUT}/20nov-${tag}.png`, fullPage: true });
+  await ctx.close();
+}
+
+// ── Monday 2 Nov, 9h NY: the run that failed shows as failed, with its step and note
+{
+  const { ctx, p, errors } = await page({ viewport: { width: 393, height: 852 }, now: '2026-11-02T14:00:00Z' });
+  await p.goto(`${BASE}/mercado/`);
+  const faixa = p.getByTestId('rodada');
+  check('2 Nov: the strip says the run failed, and at which step', (await text(p, '[data-testid="rodada"]')).includes('Rodada de seg 2 nov falhou às 6h40 — acesso aos dois repositórios'));
+  await faixa.getByText('O que rodou, etapa por etapa').click();
+  check('2 Nov: step by step, with the note', (await faixa.innerText()).includes('sem os repositórios'));
+  check('2 Nov: no errors', errors.length === 0, errors.join(' | '));
+  if (OUT) await faixa.screenshot({ path: `${OUT}/rodada-393px.png` });
   await ctx.close();
 }
 

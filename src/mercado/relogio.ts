@@ -29,5 +29,18 @@ export const aberturaDaBolsa = (dia: string) =>
 export const hojeNaBolsa = (agora = new Date()) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit', day: '2-digit' }).format(agora);
 
+/** Minutos desde a meia-noite em Nova York (pro prazo da rodada de segunda). */
+export function minutoNaBolsa(agora = new Date()) {
+  const p = partes.formatToParts(agora);
+  const n = (t: string) => Number(p.find((x) => x.type === t)?.value);
+  return n('hour') * 60 + n('minute');
+}
+
+/** "6h52", no relógio de Nova York. */
+export function horaNaBolsa(iso: string) {
+  const m = minutoNaBolsa(new Date(iso));
+  return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`;
+}
+
 /** 'AAAA-MM-DD' de n dias antes de hoje (pra janela do termômetro). */
 export const diasAtras = (n: number, agora = new Date()) => hojeNaBolsa(new Date(agora.getTime() - n * 86_400_000));

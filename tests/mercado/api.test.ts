@@ -14,6 +14,7 @@
 import { GET } from '../../api/precos';
 import { POST, type Base, buscar as buscarNaFuncao, indexar, montarPrompt as promptDaFuncao } from '../../api/perguntar';
 import { EDICOES } from '../../src/mercado/edicoes';
+import { RODADAS } from '../../src/mercado/edicoes/rodadas';
 import { MARCADOR_FORA, buscar, foraDoAssunto, montarBusca, montarPrompt, pacoteDaBase } from '../../src/mercado/perguntas';
 import { aberturaDaBolsa } from '../../src/mercado/relogio';
 
@@ -66,8 +67,8 @@ ok(aberturaDaBolsa('2026-10-30') === Date.parse('2026-10-30T13:30:00Z'), 'the op
 ok(aberturaDaBolsa('2026-11-02') === Date.parse('2026-11-02T14:30:00Z'), '…and 14:30 UTC after the clocks change on 1 Nov');
 
 // ── /api/perguntar: the same search as the page
-const base = pacoteDaBase('otech', EDICOES) as Base;
-const naPagina = montarBusca('otech', EDICOES);
+const base = pacoteDaBase('otech', EDICOES, RODADAS) as Base;
+const naPagina = montarBusca('otech', EDICOES, RODADAS);
 const naFuncao = indexar(base);
 const PERGUNTAS = [
   'o que acontece se abrir abaixo do stop?', 'onde os dados ficam guardados?', 'o que é o VIX?', 'quando sai a edição nova?',
