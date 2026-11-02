@@ -22,6 +22,7 @@ import {
 } from "../../src/mercado/desfecho";
 import { AJUDA, GLOSSARIO, ajudaDe } from "../../src/mercado/ajuda";
 import { EDICOES } from "../../src/mercado/edicoes";
+import { RODADAS } from "../../src/mercado/edicoes/rodadas";
 import {
   LIMITE_PERGUNTA,
   MARCADOR_FORA,
@@ -37,10 +38,15 @@ import {
 } from "../../src/mercado/perguntas";
 import { velasDoYahoo } from "../../src/mercado/yahoo";
 import {
+  ETAPAS,
   FORMULA_DA_CONFIANCA,
+  RODADAS_DESDE,
   TAMANHO_MAXIMO,
   confiancaDe,
   criteriosDe,
+  segundaDe,
+  sinalDaRodada,
+  type Rodada,
   type IdeiaOpcao,
   type IdeiaPreco,
   type IdeiaPrevisao,
@@ -287,6 +293,7 @@ const FORMULAS: Record<string, string> = {
   "formula-termometro": "Termometro, juro (formato.ts)",
   "formula-numeros": "pct, preco, corDoRetorno (formato.ts)",
   "formula-busca": "buscar, foraDoAssunto (perguntas.ts)",
+  "rodada": "sinalDaRodada (tipos.ts), a faixa do topo",
 };
 const respostaDe = (id: string) => {
   const p = AJUDA.flatMap((sec) => sec.perguntas).find((x) => x.id === id);
@@ -312,8 +319,33 @@ const carteira2 = `${doExemplo.carteira > 0 ? "+" : "−"}${Math.abs(doExemplo.c
 ok(respostaDe("formula-registro").includes(`${Math.round((doExemplo.acertos / doExemplo.fechadas) * 100)}%`) && respostaDe("formula-registro").includes(porcento(doExemplo.medio!)) && respostaDe("formula-registro").includes(carteira2), `fórmulas: o exemplo do registro bate com resumo() (${porcento(doExemplo.medio!)}, carteira ${carteira2})`);
 ok(respostaDe("formula-spy").includes(porcento(retornoNoPeriodo([vela("2026-11-09", 600, 615, 598, 605), vela("2026-11-10", 605, 614, 603, 612)], "2026-11-09", "2026-11-10")!)), "fórmulas: o exemplo do SPY bate com retornoNoPeriodo()");
 
+// ── a rodada de segunda: o que rodou, o que falhou, e quando falta sinal
+ok(segundaDe("2026-11-02") === "2026-11-02" && segundaDe("2026-11-08") === "2026-11-02" && segundaDe("2026-11-09") === "2026-11-09", "rodada: a semana de domingo é a da segunda anterior");
+const rod = (semana: string, em: string, resultado: Rodada["resultado"]): Rodada => ({
+  semana,
+  em,
+  resultado,
+  etapas: [{ etapa: "acesso", estado: resultado === "ok" ? "ok" : "falhou" }],
+  resumo: "t",
+});
+const duas = [rod("2026-11-09", "2026-11-09T11:52:00Z", "falhou"), rod("2026-11-09", "2026-11-09T12:30:00Z", "ok")];
+ok(sinalDaRodada(duas, "2026-11-10", 600)?.tipo === "ok", "rodada: vale o último registro da semana (falhou, rodou de novo, rodou)");
+ok(sinalDaRodada([duas[0]], "2026-11-12", 600)?.tipo === "falhou", "rodada: a falha fica até a próxima rodada da semana");
+ok(sinalDaRodada([], "2026-11-09", 9 * 60 + 29)?.tipo === "esperando", "rodada: segunda às 9h29 sem registro — esperando");
+ok(sinalDaRodada([], "2026-11-09", 9 * 60 + 30)?.tipo === "sem-sinal", "rodada: segunda às 9h30 sem registro — não deu sinal");
+ok(sinalDaRodada([duas[1]], "2026-11-16", 300)?.tipo === "esperando" && sinalDaRodada([duas[1]], "2026-11-17", 300)?.tipo === "sem-sinal", "rodada: o registro da semana passada não conta pra esta");
+ok(sinalDaRodada([], "2026-10-29", 600) === null, `rodada: antes de ${RODADAS_DESDE} a tela não cobra sinal`);
+for (const r of RODADAS) {
+  const onde = `rodada ${r.semana} ${r.em}`;
+  ok(segundaDe(r.semana) === r.semana && !Number.isNaN(Date.parse(r.em)) && r.em.slice(0, 10) >= r.semana, `${onde}: semana numa segunda e instante válido`);
+  ok(r.etapas.length > 0 && r.etapas.every((e) => e.etapa in ETAPAS), `${onde}: só etapas do roteiro`);
+  ok((r.resultado === "falhou") === r.etapas.some((e) => e.estado === "falhou"), `${onde}: "falhou" se e só se alguma etapa falhou`);
+  ok(r.resumo.trim().length > 0 && !JSON.stringify(r).includes("/c/"), `${onde}: tem resumo, e nada de caminho do app (vai pra vitrine)`);
+}
+ok(RODADAS.every((r, i) => i === 0 || RODADAS[i - 1].em >= r.em), "rodadas da mais nova pra mais antiga");
+
 // ── a caixa de perguntas: o filtro de assunto recusa antes de gastar a IA
-const busca = montarBusca("bancada", EDICOES);
+const busca = montarBusca("bancada", EDICOES, RODADAS);
 const idsBase = busca.trechos.map((t) => t.id);
 ok(new Set(idsBase).size === idsBase.length, `perguntas: ${idsBase.length} trechos na base, nenhum id repetido`);
 const DENTRO: [string, string?][] = [
@@ -327,6 +359,7 @@ const DENTRO: [string, string?][] = [
   ["como é calculado o retorno da opção?", "ajuda:formula-opcao"],
   ["qual a fórmula do retorno médio?", "ajuda:formula-registro"],
   ["como a caixa escolhe os trechos?", "ajuda:formula-busca"],
+  ["como sei se a rodada de segunda rodou?", "ajuda:rodada"],
   ["como o stop funciona?"],
   ["o que é uma trava de opção?"],
   ["por que a ideia da Microsoft?"],

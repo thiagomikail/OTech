@@ -203,6 +203,67 @@ export function criteriosDe(ideia: Ideia, semana: string): Criterio[] | null {
 /** confiança = 1 + critérios atendidos. */
 export const confiancaDe = (criterios: Criterio[]) => 1 + criterios.length;
 
+// ── a rodada de segunda
+
+/**
+ * As etapas do roteiro de segunda (`COMO-PUBLICAR.md`), na ordem. A sessão
+ * registra cada uma numa `Rodada` — a tela mostra o que rodou e o que falhou.
+ */
+export const ETAPAS = {
+  acesso: "Acesso aos dois repositórios",
+  previsoes: "Previsões que resolveram",
+  pesquisa: "Pesquisa da semana",
+  edicao: "Edição da semana",
+  "testes-bancada": "Testes no app da casa",
+  "testes-otech": "Cópia e testes na vitrine",
+} as const;
+export type Etapa = keyof typeof ETAPAS;
+
+/** O que a sessão de segunda fez, escrito por ela no fim — inclusive quando falha ou não há nada a fazer. */
+export type Rodada = {
+  /** A segunda da rodada, "AAAA-MM-DD". */
+  semana: string;
+  /** Quando a sessão terminou, ISO. */
+  em: string;
+  resultado: "ok" | "falhou";
+  etapas: { etapa: Etapa; estado: "ok" | "falhou" | "pulou"; nota?: string }[];
+  /** Uma ou duas linhas: o que mudou, ou por que parou. */
+  resumo: string;
+};
+
+/** A primeira segunda com registro de rodada: antes disso a tela não cobra sinal. */
+export const RODADAS_DESDE = "2026-11-02";
+/** A rodada começa às 6h40 de Nova York; sem registro até a abertura da bolsa (9h30), falta sinal. */
+export const PRAZO_DA_RODADA = 9 * 60 + 30;
+
+/** A segunda-feira da semana de um dia "AAAA-MM-DD". */
+export function segundaDe(dia: string): string {
+  const d = new Date(`${dia}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+export type SinalDaRodada =
+  | { tipo: "ok"; rodada: Rodada }
+  | { tipo: "falhou"; rodada: Rodada }
+  | { tipo: "esperando"; semana: string; ultima?: Rodada }
+  | { tipo: "sem-sinal"; semana: string; ultima?: Rodada };
+
+/**
+ * O estado da rodada desta semana. `hoje` é o dia em Nova York e `minuto`, os
+ * minutos desde a meia-noite de lá. Vale a última rodada registrada na semana;
+ * sem nenhuma, é "esperando" na segunda até 9h30 e "sem sinal" depois.
+ */
+export function sinalDaRodada(rodadas: Rodada[], hoje: string, minuto: number): SinalDaRodada | null {
+  const semana = segundaDe(hoje);
+  if (semana < RODADAS_DESDE) return null;
+  const daSemana = rodadas.filter((r) => r.semana === semana).sort((a, b) => b.em.localeCompare(a.em));
+  if (daSemana.length) return { tipo: daSemana[0].resultado, rodada: daSemana[0] };
+  const ultima = [...rodadas].sort((a, b) => b.em.localeCompare(a.em))[0];
+  const antesDoPrazo = hoje === semana && minuto < PRAZO_DA_RODADA;
+  return { tipo: antesDoPrazo ? "esperando" : "sem-sinal", semana, ultima };
+}
+
 export const NOME_INSTRUMENTO: Record<Instrumento, string> = {
   acao: "Ação",
   etf: "ETF",

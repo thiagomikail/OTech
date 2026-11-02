@@ -119,6 +119,32 @@ export const AJUDA: Secao[] = [
         resposta: [
           "Toda **segunda-feira, por volta das 6h40 de Nova York** (o mesmo horário de Atlanta), antes da abertura das 9h30. A página mostra a edição mais nova; o rótulo do topo diz de que semana ela é e quando foi publicada.",
           "Se algo grande acontecer depois da publicação, a edição pode ganhar um **adendo** — uma nota com data, num quadro destacado logo abaixo da leitura. O adendo nunca muda uma ideia já publicada.",
+          "Se a edição rodou ou deu erro, a faixa do topo diz ([como](#rodada)).",
+        ],
+      },
+      {
+        id: "rodada",
+        pergunta: "Como sei se a rodada de segunda rodou?",
+        resposta: [
+          "No topo da edição, a faixa **o que rodou** diz o estado da rodada desta semana, sempre com símbolo e texto:",
+          {
+            lista: [
+              "**Rodou** — a sessão de segunda terminou e deixou o registro. \"O que rodou, etapa por etapa\" abre a lista: acesso, previsões, pesquisa, edição, testes nos dois sites.",
+              "**Falhou** — a sessão rodou mas parou numa etapa; a faixa diz qual e por quê. Nada pela metade vai pro ar: só o registro da falha.",
+              "**Esperando** — é segunda antes das 9h30 de Nova York e a rodada ainda não terminou.",
+              "**Não deu sinal** — passou das 9h30 de segunda e não há registro desta semana: a sessão não rodou, não conseguiu gravar, ou o site não publicou. A edição na tela continua a anterior.",
+            ],
+          },
+          {
+            formula: [
+              "semana = a segunda-feira de hoje, em Nova York",
+              "rodou ou falhou = o último registro dessa semana",
+              "sem registro: esperando, se é segunda antes das 9h30;",
+              "              não deu sinal, depois disso",
+            ],
+          },
+          "Embaixo vêm as conferências de agora: a edição da semana e a cotação (quantos ativos responderam). No app da casa, também o banco e a chave da caixa de perguntas.",
+          "Quem escreve o registro é a própria sessão de segunda, no fim — também quando falha ou quando não há nada a fazer. Registro não se reescreve: cada rodada entra como uma linha nova no histórico, embaixo da faixa.",
         ],
       },
       {
@@ -863,10 +889,11 @@ export const AJUDA: Secao[] = [
         resposta: [
           {
             fluxo: [
-              { titulo: "6h40", texto: "A sessão de pesquisa começa num computador novo na nuvem e baixa o código." },
+              { titulo: "6h40", texto: "A sessão de pesquisa começa na nuvem, já com o código dos dois sites, e atualiza a cópia." },
               { titulo: "Pesquisa", texto: "Fecha as previsões que resolveram, lê a semana e escreve a revisão e a edição nova." },
               { titulo: "Conferência", texto: "Os testes validam as regras da conta e cada limite da edição. Se algo falha, para aqui." },
-              { titulo: "Publicação", texto: "Commit direto na main dos dois repositórios. A Vercel monta e publica sozinha." },
+              { titulo: "Registro", texto: "A sessão escreve o que rodou e o que falhou, etapa por etapa — mesmo quando para no meio." },
+              { titulo: "Publicação", texto: "Commit direto na main dos dois repositórios. A Vercel monta e publica sozinha, e a faixa do topo mostra a rodada ([como](#rodada))." },
               { titulo: "9h30", texto: "A bolsa abre: esta é a entrada de todas as ideias da semana." },
               { titulo: "Dias seguintes", texto: "Cada visita busca a cotação e mostra em que pé cada ideia está, até ela fechar." },
             ],

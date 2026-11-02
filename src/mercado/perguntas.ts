@@ -18,7 +18,7 @@
  * servidor do Bancada, no navegador e no build da OTech.
  */
 import { GLOSSARIO, ajudaDe, type Bloco, type Site } from "./ajuda";
-import { CRITERIOS, NOME_BASE, NOME_INSTRUMENTO, criteriosDe, type Edicao, type Ideia } from "./tipos";
+import { CRITERIOS, ETAPAS, NOME_BASE, NOME_INSTRUMENTO, criteriosDe, type Edicao, type Ideia, type Rodada } from "./tipos";
 
 export type Trecho = {
   /** "ajuda:entrada", "ideia:2026-11-02-msft", "agenda:2026-11-02"… Único na base. */
@@ -123,7 +123,7 @@ function descreverIdeia(i: Ideia, semana: string): string {
 }
 
 /** Os trechos que a caixa pode citar, num site. */
-export function baseDoMercado(site: Site, edicoes: Edicao[]): Trecho[] {
+export function baseDoMercado(site: Site, edicoes: Edicao[], rodadas: Rodada[] = []): Trecho[] {
   const t: Trecho[] = [];
   for (const s of ajudaDe(site))
     for (const p of s.perguntas) t.push({ id: `ajuda:${p.id}`, titulo: p.pergunta, texto: `${s.titulo}. ${textoDe(p.resposta)}`, ancora: p.id });
@@ -146,6 +146,16 @@ export function baseDoMercado(site: Site, edicoes: Edicao[]): Trecho[] {
     if (e.congresso.length) t.push({ id: `congresso:${semana}`, titulo: `Congresso na ${da}`, texto: e.congresso.map((x) => `${x.nome}: ${x.situacao} Mexe com ${x.afeta}`).join(" "), semana });
     if (e.revisao) t.push({ id: `revisao:${semana}`, titulo: `Revisão publicada na ${da}`, texto: e.revisao, semana });
     for (const a of e.adendos ?? []) t.push({ id: `adendo:${semana}:${a.em}`, titulo: `Adendo de ${a.em.slice(0, 10)} à ${da}`, texto: a.texto, semana });
+  }
+  // O registro das rodadas: "a rodada de segunda rodou?" tem resposta com data.
+  for (const r of rodadas) {
+    const etapas = r.etapas.map((x) => `${ETAPAS[x.etapa]}: ${x.estado}${x.nota ? ` (${x.nota})` : ""}.`).join(" ");
+    t.push({
+      id: `rodada:${r.em}`,
+      titulo: `Rodada de segunda ${r.semana}: ${r.resultado === "ok" ? "rodou" : "falhou"}`,
+      texto: `${r.resumo} Terminou em ${r.em}. ${etapas}`,
+      ancora: "rodada",
+    });
   }
   return t;
 }
@@ -174,7 +184,8 @@ export const TEMAS = [
   "deploy", "publicacao", "vercel", "github", "git", "codigo", "teste", "pesquisa", "sessao", "claude",
   "anthropic", "gemini", "google", "rag", "busca", "caixa", "seguranca", "chave", "privacidade", "next", "nextjs",
   "react", "vite", "prisma", "postgres", "typescript", "cdn", "cache", "espelho", "formula", "calculo", "calcula",
-  "calculado", "calculada", "criterio", "catalisador", "arredonda", "arredondamento", "bm25",
+  "calculado", "calculada", "criterio", "catalisador", "arredonda", "arredondamento", "bm25", "rodada", "rodou",
+  "sinal", "falhou",
 ];
 
 // ── a busca
@@ -205,7 +216,8 @@ export function nomesDaBase(edicoes: Edicao[]): string[] {
 }
 
 /** A base pronta pra buscar, num site. */
-export const montarBusca = (site: Site, edicoes: Edicao[]) => indexar(baseDoMercado(site, edicoes), nomesDaBase(edicoes));
+export const montarBusca = (site: Site, edicoes: Edicao[], rodadas: Rodada[] = []) =>
+  indexar(baseDoMercado(site, edicoes, rodadas), nomesDaBase(edicoes));
 
 export type Achado = { trecho: Trecho; nota: number };
 
@@ -248,8 +260,8 @@ export function foraDoAssunto(ind: Indice, pergunta: string, achados: Achado[]) 
  * repetir este arquivo: a instrução, a recusa, as listas de palavras e os
  * trechos. Vira `/mercado/base.json` no build.
  */
-export function pacoteDaBase(site: Site, edicoes: Edicao[]) {
-  const ind = montarBusca(site, edicoes);
+export function pacoteDaBase(site: Site, edicoes: Edicao[], rodadas: Rodada[] = []) {
+  const ind = montarBusca(site, edicoes, rodadas);
   return {
     instrucao: INSTRUCAO,
     recusa: RECUSA,

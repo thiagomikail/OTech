@@ -1,10 +1,11 @@
 import { type FormEvent, useState } from 'react';
 import { MessageCircleQuestion } from 'lucide-react';
 import { EDICOES } from '../edicoes';
+import { RODADAS } from '../edicoes/rodadas';
 import { LIMITE_PERGUNTA, RECUSA, type RespostaPergunta, type Trecho, buscar, foraDoAssunto, lerResposta, limparPergunta, montarBusca } from '../perguntas';
 import { Texto } from './Ajuda';
 
-const BUSCA = montarBusca('otech', EDICOES);
+const BUSCA = montarBusca('otech', EDICOES, RODADAS);
 const TRECHOS = new Map(BUSCA.trechos.map((t) => [t.id, t]));
 
 /** A fonte leva à pergunta do FAQ (nesta página) ou à edição. */

@@ -4,15 +4,17 @@ import Painel from './components/Painel';
 import CartaoIdeia from './components/Ideia';
 import Impostos from './components/Impostos';
 import Registro from './components/Registro';
+import EstadoDaRodada, { type Conferencia } from './components/Rodada';
 import Termometro, { type AoVivo } from './components/Termometro';
 import Topo from './components/Topo';
 import { Agenda, Apostas, Congresso, Evitar } from './components/Contexto';
 import { desfecho, type Linha, resumo, retornoNoPeriodo, type Vela } from './desfecho';
 import { EDICOES } from './edicoes';
+import { RODADAS } from './edicoes/rodadas';
 import { diaCurto } from './formato';
 import { velas } from './precos';
-import { diasAtras, hojeNaBolsa } from './relogio';
-import type { Ideia } from './tipos';
+import { diasAtras, hojeNaBolsa, minutoNaBolsa } from './relogio';
+import { type Ideia, segundaDe, sinalDaRodada } from './tipos';
 
 const POSTURA = { defensiva: 'defensiva', neutra: 'neutra', ofensiva: 'ofensiva' } as const;
 
@@ -82,6 +84,25 @@ export default function App() {
   const daEdicao = linhas.filter((l) => l.semana === edicao.semana);
   const proximo = linhas.filter((l) => l.desfecho.estado !== 'fechada').map((l) => l.ideia.vence).sort()[0] ?? null;
 
+  // O que rodou: a rodada de segunda desta semana e o que responde agora.
+  const sinal = sinalDaRodada(RODADAS, hoje, minutoNaBolsa());
+  const maisNova = EDICOES[0].semana;
+  const conferencias: Conferencia[] = [
+    {
+      nome: 'Edição',
+      estado: maisNova >= segundaDe(hoje) || sinal?.tipo === 'esperando' ? 'ok' : 'falhou',
+      texto: maisNova >= segundaDe(hoje) ? `semana de ${diaCurto(maisNova)}` : `ainda a de ${diaCurto(maisNova)}`,
+    },
+  ];
+  if (cotacoes === null || aoVivo === null) conferencias.push({ nome: 'Cotação', estado: 'buscando', texto: 'buscando…' });
+  else {
+    const todas = [...cotacoes.values(), ...aoVivo.values()];
+    const com = todas.filter((v) => v && (!Array.isArray(v) || v.length > 0)).length;
+    conferencias.push({ nome: 'Cotação', estado: com === todas.length ? 'ok' : 'falhou', texto: com === 0 ? 'sem cotação agora' : `${com} de ${todas.length} ativos` });
+  }
+  const mostrada = sinal && (sinal.tipo === 'ok' || sinal.tipo === 'falhou') ? sinal.rodada : null;
+  const historico = RODADAS.filter((r) => r !== mostrada).slice(0, 5);
+
   return (
     <>
       <Topo />
@@ -100,6 +121,8 @@ export default function App() {
             </a>
           </li>
         </ul>
+
+        <EstadoDaRodada sinal={sinal} conferencias={conferencias} historico={historico} />
 
         {EDICOES.length > 1 && (
           <nav aria-label="Edições" className="mt-5 flex flex-wrap gap-1.5">

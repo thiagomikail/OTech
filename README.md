@@ -214,6 +214,11 @@ the same period. On paper: nothing here places an order.
   returns, options, break-even, prediction markets, SPY, the record, the gauge, rounding, the search score and
   confidence) with a worked example that `npm run test:mercado` recomputes with the real code. Confidence (1–5)
   is itself a formula since the 9 Nov 2026 edition: 1 + criteria met (`criteriosDe` in `src/mercado/tipos.ts`).
+- **What ran** — a strip at the top of `/mercado/` says whether this week's Monday run ran, failed (and at which
+  step), is still due (Monday before 9:30 New York), or gave **no signal** (after that, with no record). The run
+  writes its own record in `src/mercado/edicoes/rodadas.ts` (mirrored with the editions), failures included;
+  `sinalDaRodada` in `src/mercado/tipos.ts` decides. Below it: this week's edition and how many symbols have a
+  quote right now.
 - **Ask the base** — a question box at the top of the help page. Small RAG, no vector store
   (`src/mercado/perguntas.ts`): the FAQ, glossary and editions become excerpts, BM25 search without accents
   finds the best ones, and Gemini answers from those alone, citing them. An off-topic question is refused before
