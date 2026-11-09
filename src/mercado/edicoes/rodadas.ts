@@ -11,6 +11,20 @@ import type { Rodada } from "../tipos";
  */
 export const RODADAS: Rodada[] = [
   {
+    semana: "2026-11-09",
+    em: "2026-11-09T11:46:57Z",
+    resultado: "ok",
+    etapas: [
+      { etapa: "acesso", estado: "ok" },
+      { etapa: "previsoes", estado: "ok", nota: "A única previsão aberta (Fed em dezembro) vence em 9 dez; nada resolveu." },
+      { etapa: "pesquisa", estado: "ok" },
+      { etapa: "edicao", estado: "ok" },
+      { etapa: "testes-bancada", estado: "ok" },
+      { etapa: "testes-otech", estado: "ok" },
+    ],
+    resumo: "Edição nova com 3 ideias (trava de alta no chip, ouro, bitcoin de baixa) e a revisão da estreia, que apanhou da eleição.",
+  },
+  {
     semana: "2026-11-02",
     em: "2026-11-02T11:40:51Z",
     resultado: "falhou",
