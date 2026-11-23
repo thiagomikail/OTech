@@ -11,6 +11,20 @@ import type { Rodada } from "../tipos";
  */
 export const RODADAS: Rodada[] = [
   {
+    semana: "2026-11-23",
+    em: "2026-11-23T11:44:20Z",
+    resultado: "ok",
+    etapas: [
+      { etapa: "acesso", estado: "ok" },
+      { etapa: "previsoes", estado: "ok", nota: "A única previsão aberta (Fed mantém em dezembro) resolve em 9 dez; nada resolveu." },
+      { etapa: "pesquisa", estado: "ok" },
+      { etapa: "edicao", estado: "ok" },
+      { etapa: "testes-bancada", estado: "ok" },
+      { etapa: "testes-otech", estado: "ok" },
+    ],
+    resumo: "Edição nova com 3 ideias (trava de alta no S&P, consumo básico, repique curto na Nasdaq) e a revisão de 16 nov: o seguro de baixa na Nasdaq pagou.",
+  },
+  {
     semana: "2026-11-16",
     em: "2026-11-16T11:45:33Z",
     resultado: "ok",
